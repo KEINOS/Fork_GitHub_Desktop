@@ -34,10 +34,8 @@ interface IAppearanceProps {
   readonly onSelectedTimeFormatChanged: (format: TimeFormat) => void
   readonly selectedNumberFormat: INumberFormat
   readonly onSelectedNumberFormatChanged: (format: INumberFormat) => void
-  readonly relativeTimeInCommitList: boolean
-  readonly onRelativeTimeInCommitListChanged: (value: boolean) => void
-  readonly relativeTimeInBranchList: boolean
-  readonly onRelativeTimeInBranchListChanged: (value: boolean) => void
+  readonly preferAbsoluteDates: boolean
+  readonly onPreferAbsoluteDatesChanged: (value: boolean) => void
 }
 
 interface IAppearanceState {
@@ -123,16 +121,10 @@ export class Appearance extends React.Component<
     }
   }
 
-  private onRelativeTimeInCommitListChanged = (
+  private onPreferAbsoluteDatesChanged = (
     event: React.FormEvent<HTMLInputElement>
   ) => {
-    this.props.onRelativeTimeInCommitListChanged(event.currentTarget.checked)
-  }
-
-  private onRelativeTimeInBranchListChanged = (
-    event: React.FormEvent<HTMLInputElement>
-  ) => {
-    this.props.onRelativeTimeInBranchListChanged(event.currentTarget.checked)
+    this.props.onPreferAbsoluteDatesChanged(event.currentTarget.checked)
   }
 
   public renderThemeSwatch = (theme: ApplicationTheme) => {
@@ -208,6 +200,8 @@ export class Appearance extends React.Component<
 
     return (
       <div className="appearance-section formatting-section">
+        <h2 id="formatting-heading">Formatting</h2>
+
         <Row>
           <Select
             label={__DARWIN__ ? 'Date Format' : 'Date format'}
@@ -249,26 +243,16 @@ export class Appearance extends React.Component<
           ))}
         </Select>
 
-        <div className="relative-time-section">
-          <Checkbox
-            label="Show relative time in commit list"
-            value={
-              this.props.relativeTimeInCommitList
-                ? CheckboxValue.On
-                : CheckboxValue.Off
-            }
-            onChange={this.onRelativeTimeInCommitListChanged}
-          />
-          <Checkbox
-            label="Show relative time in branch list"
-            value={
-              this.props.relativeTimeInBranchList
-                ? CheckboxValue.On
-                : CheckboxValue.Off
-            }
-            onChange={this.onRelativeTimeInBranchListChanged}
-          />
-        </div>
+        <Checkbox
+          className="prefer-absolute-dates"
+          label="Prefer absolute dates over relative"
+          value={
+            this.props.preferAbsoluteDates
+              ? CheckboxValue.On
+              : CheckboxValue.Off
+          }
+          onChange={this.onPreferAbsoluteDatesChanged}
+        />
       </div>
     )
   }
@@ -278,6 +262,8 @@ export class Appearance extends React.Component<
 
     return (
       <div className="appearance-section">
+        <h2 id="diff-heading">Diff</h2>
+
         <Select
           value={this.state.selectedTabSize.toString()}
           label={__DARWIN__ ? 'Tab Size' : 'Tab size'}

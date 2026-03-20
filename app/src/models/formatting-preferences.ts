@@ -298,23 +298,16 @@ export function numberFormatFromKey(key: string): INumberFormat {
   return match ?? defaultNumberFormat
 }
 
-const relativeTimeInCommitListKey = 'relativeTimeInCommitList'
-const relativeTimeInBranchListKey = 'relativeTimeInBranchList'
+const preferAbsoluteDatesKey = 'preferAbsoluteDates'
 
-/** Whether to show relative time in the commit list. Defaults to true. */
-export function getRelativeTimeInCommitList(): boolean {
-  return localStorage.getItem(relativeTimeInCommitListKey) !== '0'
+/**
+ * Whether to prefer absolute dates over relative time in lists.
+ * Defaults to false (i.e., relative time is shown by default).
+ */
+export function getPreferAbsoluteDates(): boolean {
+  return localStorage.getItem(preferAbsoluteDatesKey) === '1'
 }
 
-/** Whether to show relative time in the branch list. Defaults to true. */
-export function getRelativeTimeInBranchList(): boolean {
-  return localStorage.getItem(relativeTimeInBranchListKey) !== '0'
-}
-
-export function setRelativeTimeInCommitList(value: boolean): void {
-  localStorage.setItem(relativeTimeInCommitListKey, value ? '1' : '0')
-}
-
-export function setRelativeTimeInBranchList(value: boolean): void {
-  localStorage.setItem(relativeTimeInBranchListKey, value ? '1' : '0')
+export function setPreferAbsoluteDates(value: boolean): void {
+  localStorage.setItem(preferAbsoluteDatesKey, value ? '1' : '0')
 }

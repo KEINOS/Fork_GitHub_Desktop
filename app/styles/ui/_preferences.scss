@@ -69,11 +69,11 @@
 
   .formatting-section {
     margin-top: var(--spacing);
-  }
 
-  .relative-time-section {
-    margin-top: var(--spacing);
-    margin-bottom: var(--spacing);
+    .prefer-absolute-dates {
+      margin-top: var(--spacing);
+      margin-bottom: var(--spacing);
+    }
   }
 
   .accounts-tab {

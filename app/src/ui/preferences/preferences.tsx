@@ -61,10 +61,8 @@ import {
   DateFormat,
   TimeFormat,
   INumberFormat,
-  getRelativeTimeInCommitList,
-  getRelativeTimeInBranchList,
-  setRelativeTimeInCommitList,
-  setRelativeTimeInBranchList,
+  getPreferAbsoluteDates,
+  setPreferAbsoluteDates,
   getDateFormatPreference,
   getTimeFormatPreference,
   getNumberFormatPreference,
@@ -170,8 +168,7 @@ interface IPreferencesState {
   readonly selectedDateFormat: DateFormat
   readonly selectedTimeFormat: TimeFormat
   readonly selectedNumberFormat: INumberFormat
-  readonly relativeTimeInCommitList: boolean
-  readonly relativeTimeInBranchList: boolean
+  readonly preferAbsoluteDates: boolean
 }
 
 /**
@@ -237,8 +234,7 @@ export class Preferences extends React.Component<
       selectedDateFormat: getDateFormatPreference(),
       selectedTimeFormat: getTimeFormatPreference(),
       selectedNumberFormat: getNumberFormatPreference(),
-      relativeTimeInCommitList: getRelativeTimeInCommitList(),
-      relativeTimeInBranchList: getRelativeTimeInBranchList(),
+      preferAbsoluteDates: getPreferAbsoluteDates(),
     }
   }
 
@@ -544,14 +540,8 @@ export class Preferences extends React.Component<
             onSelectedTimeFormatChanged={this.onSelectedTimeFormatChanged}
             selectedNumberFormat={this.state.selectedNumberFormat}
             onSelectedNumberFormatChanged={this.onSelectedNumberFormatChanged}
-            relativeTimeInCommitList={this.state.relativeTimeInCommitList}
-            onRelativeTimeInCommitListChanged={
-              this.onRelativeTimeInCommitListChanged
-            }
-            relativeTimeInBranchList={this.state.relativeTimeInBranchList}
-            onRelativeTimeInBranchListChanged={
-              this.onRelativeTimeInBranchListChanged
-            }
+            preferAbsoluteDates={this.state.preferAbsoluteDates}
+            onPreferAbsoluteDatesChanged={this.onPreferAbsoluteDatesChanged}
           />
         )
         break
@@ -771,16 +761,8 @@ export class Preferences extends React.Component<
     this.setState({ selectedNumberFormat })
   }
 
-  private onRelativeTimeInCommitListChanged = (
-    relativeTimeInCommitList: boolean
-  ) => {
-    this.setState({ relativeTimeInCommitList })
-  }
-
-  private onRelativeTimeInBranchListChanged = (
-    relativeTimeInBranchList: boolean
-  ) => {
-    this.setState({ relativeTimeInBranchList })
+  private onPreferAbsoluteDatesChanged = (preferAbsoluteDates: boolean) => {
+    this.setState({ preferAbsoluteDates })
   }
 
   private onUseCustomEditorChanged = (useCustomEditor: boolean) => {
@@ -978,9 +960,7 @@ export class Preferences extends React.Component<
     setDateFormatPreference(this.state.selectedDateFormat)
     setTimeFormatPreference(this.state.selectedTimeFormat)
     setNumberFormatPreference(this.state.selectedNumberFormat)
-
-    setRelativeTimeInCommitList(this.state.relativeTimeInCommitList)
-    setRelativeTimeInBranchList(this.state.relativeTimeInBranchList)
+    setPreferAbsoluteDates(this.state.preferAbsoluteDates)
 
     this.props.onDismissed()
   }
