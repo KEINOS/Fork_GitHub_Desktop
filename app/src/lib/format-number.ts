@@ -46,7 +46,9 @@ export function formatNumber(value: number, fmt?: INumberFormat): string {
 
 export function formatCompactNumber(
   value: number,
-  fmt?: INumberFormat
+  fmt?: INumberFormat & {
+    decimals?: number
+  }
 ): string {
   if (!fmt && !enableFormattingPreferences()) {
     return `${value}`
@@ -73,7 +75,12 @@ export function formatCompactNumber(
   }
 
   const scaled = value / Math.pow(1000, unitIx)
-  const decimals = Math.abs(scaled) < 10 ? 1 : 0
+
+  // If the user didn't provide an explicit number of decimals to use, we'll
+  // default to 1 decimal for numbers less than 10 and no decimals for numbers
+  // 10 or greater. This is a common convention for compact number formatting
+  // that balances precision with brevity.
+  const decimals = fmt?.decimals ?? (Math.abs(scaled) < 10 ? 1 : 0)
 
   const result = round(scaled, decimals)
   return formatNumber(result, fmt) + units[unitIx]
