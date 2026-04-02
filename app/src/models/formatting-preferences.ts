@@ -115,14 +115,12 @@ const spaceDigitGroupingCountries = ['CA', 'DK', 'FI', 'SE', 'FR', 'DE']
 const dotDigitGroupingCountries = ['IT', 'NO', 'ES']
 
 function prefersTwelveHourTime(): boolean {
-  return (
-    localeCountryCode !== null && twelveHourCountries.has(localeCountryCode)
-  )
+  return localeCountryCode == null || twelveHourCountries.has(localeCountryCode)
 }
 
 function prefersDecimalPoint(): boolean {
   return (
-    localeCountryCode !== null &&
+    localeCountryCode == null ||
     decimalPointCountries.includes(localeCountryCode)
   )
 }
