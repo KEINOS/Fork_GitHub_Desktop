@@ -396,8 +396,11 @@ export interface IAppState {
    */
   readonly selectedCopilotModel: string | null
 
-  /** The list of available Copilot models fetched from the SDK. */
-  readonly copilotModels: ReadonlyArray<ModelInfo>
+  /**
+   * The list of available Copilot models fetched from the SDK.
+   * Null when the list has not been fetched yet.
+   */
+  readonly copilotModels: ReadonlyArray<ModelInfo> | null
 
   /** Whether Copilot is available (i.e. a GitHub.com account is signed in). */
   readonly copilotAvailable: boolean

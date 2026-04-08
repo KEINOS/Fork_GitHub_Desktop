@@ -37,7 +37,7 @@ describe('CopilotPreferences', () => {
     render(
       <CopilotPreferences
         selectedCopilotModel={null}
-        copilotModels={[]}
+        copilotModels={null}
         copilotAvailable={false}
         onSelectedCopilotModelChanged={() => {}}
       />
@@ -55,11 +55,11 @@ describe('CopilotPreferences', () => {
     )
   })
 
-  it('shows loading message when copilot is available but models are empty', () => {
+  it('shows loading message when copilot is available but models not yet fetched', () => {
     render(
       <CopilotPreferences
         selectedCopilotModel={null}
-        copilotModels={[]}
+        copilotModels={null}
         copilotAvailable={true}
         onSelectedCopilotModelChanged={() => {}}
       />
@@ -70,6 +70,26 @@ describe('CopilotPreferences', () => {
       screen.queryByRole('combobox'),
       null,
       'Select should not be rendered while loading'
+    )
+  })
+
+  it('shows no-models message when fetch completed with empty result', () => {
+    render(
+      <CopilotPreferences
+        selectedCopilotModel={null}
+        copilotModels={[]}
+        copilotAvailable={true}
+        onSelectedCopilotModelChanged={() => {}}
+      />
+    )
+
+    assert.ok(
+      screen.getByText('No models available. Check your Copilot subscription.')
+    )
+    assert.strictEqual(
+      screen.queryByRole('combobox'),
+      null,
+      'Select should not be rendered when no models are available'
     )
   })
 

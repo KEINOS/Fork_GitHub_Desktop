@@ -94,7 +94,7 @@ interface IPreferencesProps {
   readonly underlineLinks: boolean
   readonly showDiffCheckMarks: boolean
   readonly selectedCopilotModel: string | null
-  readonly copilotModels: ReadonlyArray<ModelInfo>
+  readonly copilotModels: ReadonlyArray<ModelInfo> | null
   readonly copilotAvailable: boolean
 }
 

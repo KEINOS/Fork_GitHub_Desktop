@@ -636,7 +636,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
   private showChangesFilter: boolean = false
 
   private selectedCopilotModel: string | null = null
-  private copilotModels: ReadonlyArray<ModelInfo> = []
+  private copilotModels: ReadonlyArray<ModelInfo> | null = null
 
   public constructor(
     private readonly gitHubUserStore: GitHubUserStore,
@@ -5678,7 +5678,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
       try {
         const modelInfo =
           this.selectedCopilotModel !== null
-            ? this.copilotModels.find(
+            ? (this.copilotModels ?? []).find(
                 m => m.id === this.selectedCopilotModel
               ) ?? null
             : null

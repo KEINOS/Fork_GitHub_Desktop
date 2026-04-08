@@ -6,7 +6,7 @@ import { DefaultCopilotModel } from '../../lib/stores/copilot-store'
 
 interface ICopilotPreferencesProps {
   readonly selectedCopilotModel: string | null
-  readonly copilotModels: ReadonlyArray<ModelInfo>
+  readonly copilotModels: ReadonlyArray<ModelInfo> | null
   readonly copilotAvailable: boolean
   readonly onSelectedCopilotModelChanged: (model: string | null) => void
 }
@@ -44,8 +44,12 @@ export class CopilotPreferences extends React.Component<ICopilotPreferencesProps
 
     const { copilotModels, selectedCopilotModel } = this.props
 
-    if (copilotModels.length === 0) {
+    if (copilotModels === null) {
       return <p>Loading available models…</p>
+    }
+
+    if (copilotModels.length === 0) {
+      return <p>No models available. Check your Copilot subscription.</p>
     }
 
     return (
