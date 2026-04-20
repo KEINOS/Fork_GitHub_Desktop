@@ -72,6 +72,7 @@ import { AppMenuBar } from './app-menu'
 import { UpdateAvailable, renderBanner } from './banners'
 import { Preferences } from './preferences'
 import { EditCopilotBYOKProviderDialog } from './copilot/edit-byok-provider-dialog'
+import { ConfirmDeleteCopilotBYOKProviderDialog } from './copilot/confirm-delete-byok-provider-dialog'
 import type { IBYOKProvider } from '../lib/copilot/byok'
 import { OpenWithExternalEditor } from './open-with-external-editor/open-with-external-editor'
 import { RepositorySettings } from './repository-settings'
@@ -1727,6 +1728,15 @@ export class App extends React.Component<IAppProps, IAppState> {
             onDismissed={onPopupDismissedFn}
           />
         )
+      case PopupType.ConfirmDeleteCopilotBYOKProvider:
+        return (
+          <ConfirmDeleteCopilotBYOKProviderDialog
+            key="confirm-delete-copilot-byok-provider"
+            provider={popup.provider}
+            onConfirm={this.onConfirmDeleteCopilotBYOKProvider}
+            onDismissed={onPopupDismissedFn}
+          />
+        )
       case PopupType.About:
         const version = __DEV__ ? __SHA__.substring(0, 10) : getVersion()
 
@@ -2831,6 +2841,10 @@ export class App extends React.Component<IAppProps, IAppState> {
     } else {
       this.props.dispatcher.addCopilotBYOKProvider(provider, secret ?? null)
     }
+  }
+
+  private onConfirmDeleteCopilotBYOKProvider = (provider: IBYOKProvider) => {
+    this.props.dispatcher.deleteCopilotBYOKProvider(provider.id)
   }
 
   private showAcknowledgements = () => {

@@ -880,7 +880,10 @@ export class Preferences extends React.Component<
   }
 
   private onDeleteBYOKProvider = (provider: IBYOKProvider) => {
-    this.props.dispatcher.deleteCopilotBYOKProvider(provider.id)
+    this.props.dispatcher.showPopup({
+      type: PopupType.ConfirmDeleteCopilotBYOKProvider,
+      provider,
+    })
   }
 
   private onSelectedTabSizeChanged = (tabSize: number) => {

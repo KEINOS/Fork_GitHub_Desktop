@@ -109,6 +109,7 @@ export enum PopupType {
   HookFailed = 'HookFailed',
   CommitProgress = 'CommitProgress',
   EditCopilotBYOKProvider = 'EditCopilotBYOKProvider',
+  ConfirmDeleteCopilotBYOKProvider = 'ConfirmDeleteCopilotBYOKProvider',
 }
 
 interface IBasePopup {
@@ -149,6 +150,10 @@ export type PopupDetail =
   | {
       type: PopupType.EditCopilotBYOKProvider
       provider: IBYOKProvider | null
+    }
+  | {
+      type: PopupType.ConfirmDeleteCopilotBYOKProvider
+      provider: IBYOKProvider
     }
   | {
       type: PopupType.RepositorySettings
