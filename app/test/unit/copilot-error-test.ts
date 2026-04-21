@@ -94,7 +94,10 @@ describe('getCopilotErrorDisplayInfo', () => {
       displayInfo?.message,
       'You have used all available Copilot premium requests.'
     )
-    assert.equal(displayInfo?.retryAfterMessage, 'You can try again in 120 seconds.')
+    assert.equal(
+      displayInfo?.retryAfterMessage,
+      'You can try again in 120 seconds.'
+    )
     assert.equal(displayInfo?.actionText, undefined)
     assert.equal(displayInfo?.actionURL, undefined)
   })

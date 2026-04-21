@@ -1,9 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert'
-import {
-  API,
-  getNextPagePathWithIncreasingPageSize,
-} from '../../src/lib/api'
+import { API, getNextPagePathWithIncreasingPageSize } from '../../src/lib/api'
 import { CopilotError } from '../../src/lib/copilot-error'
 import * as URL from 'url'
 
@@ -141,22 +138,25 @@ describe('API', () => {
         'https://copilot.example.com'
       )
 
-      Reflect.set(api, 'request', async () =>
-        new Response(
-          JSON.stringify({
-            error: {
-              code: 'quota_exceeded',
-              message:
-                'You have used all available Copilot premium requests.',
-            },
-          }),
-          {
-            status: 402,
-            headers: {
-              'Retry-After': '300',
-            },
-          }
-        )
+      Reflect.set(
+        api,
+        'request',
+        async () =>
+          new Response(
+            JSON.stringify({
+              error: {
+                code: 'quota_exceeded',
+                message:
+                  'You have used all available Copilot premium requests.',
+              },
+            }),
+            {
+              status: 402,
+              headers: {
+                'Retry-After': '300',
+              },
+            }
+          )
       )
 
       await assert.rejects(

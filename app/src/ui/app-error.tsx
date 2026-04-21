@@ -130,12 +130,15 @@ export class AppError extends React.Component<IAppErrorProps, IAppErrorState> {
     if (e instanceof CopilotError) {
       const displayInfo = getCopilotErrorDisplayInfo(e)
       if (displayInfo !== null) {
-        const { actionText, actionURL, message, retryAfterMessage } = displayInfo
+        const { actionText, actionURL, message, retryAfterMessage } =
+          displayInfo
 
         return (
           <>
             <p>{message}</p>
-            {retryAfterMessage !== undefined ? <p>{retryAfterMessage}</p> : null}
+            {retryAfterMessage !== undefined ? (
+              <p>{retryAfterMessage}</p>
+            ) : null}
             {actionText !== undefined && actionURL !== undefined ? (
               <p>
                 <LinkButton uri={actionURL}>{actionText}</LinkButton>
