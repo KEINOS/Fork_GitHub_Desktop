@@ -247,32 +247,56 @@ export async function buildConflictContext(
       try {
         absolutePath = await resolveWithin(workingDirectory, file.path)
       } catch {
-        return { path: file.path, hunks: [], skippedReason: 'File path could not be resolved safely' }
+        return {
+          path: file.path,
+          hunks: [],
+          skippedReason: 'File path could not be resolved safely',
+        }
       }
       if (absolutePath === null) {
-        return { path: file.path, hunks: [], skippedReason: 'File path is outside the repository' }
+        return {
+          path: file.path,
+          hunks: [],
+          skippedReason: 'File path is outside the repository',
+        }
       }
 
       // Check file size before reading to avoid loading huge files into memory
       try {
         const fileStat = await stat(absolutePath)
         if (fileStat.size > MAX_CONFLICT_FILE_SIZE) {
-          return { path: file.path, hunks: [], skippedReason: 'File exceeds 1MB size limit' }
+          return {
+            path: file.path,
+            hunks: [],
+            skippedReason: 'File exceeds 1MB size limit',
+          }
         }
       } catch {
-        return { path: file.path, hunks: [], skippedReason: 'File could not be read' }
+        return {
+          path: file.path,
+          hunks: [],
+          skippedReason: 'File could not be read',
+        }
       }
 
       let content: string
       try {
         content = await readFile(absolutePath, 'utf8')
       } catch {
-        return { path: file.path, hunks: [], skippedReason: 'File could not be read' }
+        return {
+          path: file.path,
+          hunks: [],
+          skippedReason: 'File could not be read',
+        }
       }
 
       const hunks = extractConflictHunks(content)
       if (hunks.length === 0) {
-        return { path: file.path, hunks: [], skippedReason: 'No conflict markers found' }
+        return {
+          path: file.path,
+          hunks: [],
+          skippedReason: 'No conflict markers found',
+        }
       }
 
       return { path: file.path, hunks }
