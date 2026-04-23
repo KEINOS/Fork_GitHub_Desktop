@@ -8706,8 +8706,18 @@ export class AppStore extends TypedBaseStore<IAppState> {
       return { kind: 'copilot', modelId: null }
     }
 
-    const secret =
-      provider.authKind === 'none' ? null : await getBYOKSecret(provider.id)
+    let secret: string | null = null
+    if (provider.authKind !== 'none') {
+      try {
+        secret = await getBYOKSecret(provider.id)
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e)
+        throw new Error(
+          `Could not read the credential for the custom Copilot provider ` +
+            `'${provider.name}' from the OS keychain: ${message}`
+        )
+      }
+    }
 
     if (provider.authKind !== 'none' && (secret === null || secret === '')) {
       throw new Error(
