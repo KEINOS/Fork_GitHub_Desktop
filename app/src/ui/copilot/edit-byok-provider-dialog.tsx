@@ -472,11 +472,20 @@ export class EditCopilotBYOKProviderDialog extends React.Component<
       ids.add(id)
     }
 
-    if (
+    // We can rely on the previously stored secret when editing only if the
+    // authentication kind hasn't changed. A change from 'none' to a credential
+    // kind, or between 'apiKey' and 'bearer' (which use different request
+    // headers), forces the user to enter a secret rather than silently
+    // sending an unauthenticated/wrong-shaped request.
+    const existing = this.props.provider
+    const authKindChanged =
+      existing !== null && existing.authKind !== this.state.authKind
+    const requiresNewSecret =
       this.state.authKind !== 'none' &&
-      this.props.provider === null &&
-      this.state.secret.length === 0
-    ) {
+      this.state.secret.length === 0 &&
+      (existing === null || authKindChanged)
+
+    if (requiresNewSecret) {
       return this.state.authKind === 'bearer'
         ? 'Please enter a bearer token.'
         : 'Please enter an API key.'
