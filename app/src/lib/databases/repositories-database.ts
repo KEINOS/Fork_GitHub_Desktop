@@ -65,6 +65,13 @@ export interface IDatabaseRepository {
    * of Git and GitHub.
    */
   readonly isTutorialRepository?: boolean
+
+  /**
+   * The path to the main worktree for this repository, or null if the
+   * repository path itself is the main worktree. Used as a stable anchor
+   * to recover from if a linked worktree is deleted externally.
+   */
+  readonly mainWorktreePath?: string | null
 }
 
 /**
@@ -137,6 +144,9 @@ export class RepositoriesDatabase extends BaseDatabase {
 
     this.conditionalVersion(8, {}, ensureNoUndefinedParentID)
     this.conditionalVersion(9, { owners: '++id, &key' }, createOwnerKey)
+
+    // Version 10: Add mainWorktreePath column to repositories (no index needed)
+    this.conditionalVersion(10, {})
   }
 }
 

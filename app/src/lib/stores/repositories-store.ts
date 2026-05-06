@@ -152,7 +152,8 @@ export class RepositoriesStore extends TypedBaseStore<
       repo.missing,
       repo.alias,
       repo.workflowPreferences,
-      repo.isTutorialRepository
+      repo.isTutorialRepository,
+      repo.mainWorktreePath ?? null
     )
   }
 
@@ -287,7 +288,8 @@ export class RepositoriesStore extends TypedBaseStore<
       missing,
       repository.alias,
       repository.workflowPreferences,
-      repository.isTutorialRepository
+      repository.isTutorialRepository,
+      repository.mainWorktreePath
     )
   }
 
@@ -337,7 +339,8 @@ export class RepositoriesStore extends TypedBaseStore<
       false,
       repository.alias,
       repository.workflowPreferences,
-      repository.isTutorialRepository
+      repository.isTutorialRepository,
+      repository.mainWorktreePath
     )
   }
 
@@ -483,7 +486,8 @@ export class RepositoriesStore extends TypedBaseStore<
       repo.missing,
       repo.alias,
       repo.workflowPreferences,
-      repo.isTutorialRepository
+      repo.isTutorialRepository,
+      repo.mainWorktreePath
     )
 
     assertIsRepositoryWithGitHubRepository(updatedRepo)

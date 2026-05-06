@@ -48,7 +48,13 @@ export class Repository {
      * onboarding flow. Tutorial repositories trigger a tutorial user experience
      * which introduces new users to some core concepts of Git and GitHub.
      */
-    public readonly isTutorialRepository: boolean = false
+    public readonly isTutorialRepository: boolean = false,
+    /**
+     * The path to the main worktree, or null if `path` is itself the main
+     * worktree. Used as a stable anchor for recovery when a linked worktree
+     * is deleted externally.
+     */
+    public readonly mainWorktreePath: string | null = null
   ) {
     this.name = (gitHubRepository && gitHubRepository.name) || getBaseName(path)
 
