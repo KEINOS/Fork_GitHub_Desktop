@@ -122,8 +122,7 @@ export async function isLinkedWorktree(
   const repoPath = repository.path
 
   return worktrees.some(
-    wt =>
-      wt.type === 'linked' && normalizePath(wt.path) === normalizePath(repoPath)
+    wt => wt.type === 'linked' && wt.path === repoPath
   )
 }
 
@@ -148,8 +147,4 @@ export function isLinkedWorktreeSync(repositoryPath: string): boolean {
   } catch {
     return false
   }
-}
-
-function normalizePath(p: string): string {
-  return p.replace(/\/+$/, '')
 }

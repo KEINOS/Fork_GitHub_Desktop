@@ -70,11 +70,11 @@ export class WorktreeDropdown extends React.Component<
       return
     }
 
-    const mainWorktreePath = normalizePath(mainWorktree.path)
-    const worktreePath = normalizePath(worktree.path)
+    const mainWorktreePath = mainWorktree.path
+    const worktreePath = worktree.path
 
     // Already on this worktree, nothing to do
-    if (worktreePath === normalizePath(repository.path)) {
+    if (worktreePath === repository.path) {
       return
     }
 
@@ -151,9 +151,9 @@ export class WorktreeDropdown extends React.Component<
   }
 
   private getCurrentWorktree(): WorktreeEntry | null {
-    const repoPath = normalizePath(this.props.repository.path)
+    const repoPath = this.props.repository.path
     return (
-      this.state.worktrees.find(wt => normalizePath(wt.path) === repoPath) ??
+      this.state.worktrees.find(wt => wt.path === repoPath) ??
       null
     )
   }
@@ -216,8 +216,4 @@ export class WorktreeDropdown extends React.Component<
       </Resizable>
     )
   }
-}
-
-function normalizePath(p: string): string {
-  return p.replace(/\/+$/, '')
 }

@@ -63,7 +63,7 @@ export class DeleteWorktreeDialog extends React.Component<
 
     const { repository, worktreePath, dispatcher } = this.props
     const isDeletingCurrentWorktree =
-      normalizePath(repository.path) === normalizePath(worktreePath)
+      repository.path === worktreePath
 
     try {
       if (isDeletingCurrentWorktree) {
@@ -95,8 +95,4 @@ export class DeleteWorktreeDialog extends React.Component<
 
     this.props.onDismissed()
   }
-}
-
-function normalizePath(p: string): string {
-  return p.replace(/\/+$/, '')
 }
