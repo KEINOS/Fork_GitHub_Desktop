@@ -7,18 +7,19 @@ import { getWorktreeCheckedOutBranches } from '../../../src/lib/git'
 
 describe('git/worktree', () => {
   describe('getWorktreeCheckedOutBranches', () => {
-    it('returns empty set when there are no linked worktrees', async t => {
-      const repo = await setupEmptyRepository(t)
+    it('returns only main worktree branch when there are no linked worktrees', async t => {
+      const repo = await setupEmptyRepository(t, 'main')
       await makeCommit(repo, {
         entries: [{ path: 'README', contents: 'hello' }],
       })
 
       const branches = await getWorktreeCheckedOutBranches(repo)
-      assert.strictEqual(branches.size, 0)
+      assert.strictEqual(branches.size, 1)
+      assert(branches.has('refs/heads/main'))
     })
 
     it('returns branches checked out in linked worktrees', async t => {
-      const repo = await setupEmptyRepository(t)
+      const repo = await setupEmptyRepository(t, 'main')
       await makeCommit(repo, {
         entries: [{ path: 'README', contents: 'hello' }],
       })
@@ -30,26 +31,12 @@ describe('git/worktree', () => {
 
       const branches = await getWorktreeCheckedOutBranches(repo)
       assert(branches.has('refs/heads/feature-a'))
-      assert.strictEqual(branches.size, 1)
-    })
-
-    it('does not include the main worktree branch', async t => {
-      const repo = await setupEmptyRepository(t)
-      await makeCommit(repo, {
-        entries: [{ path: 'README', contents: 'hello' }],
-      })
-      await exec(['branch', 'feature-a'], repo.path)
-      await exec(
-        ['worktree', 'add', repo.path + '-wt-a', 'feature-a'],
-        repo.path
-      )
-
-      const branches = await getWorktreeCheckedOutBranches(repo)
-      assert(!branches.has('refs/heads/master'))
+      assert(branches.has('refs/heads/main'))
+      assert.strictEqual(branches.size, 2)
     })
 
     it('handles multiple linked worktrees', async t => {
-      const repo = await setupEmptyRepository(t)
+      const repo = await setupEmptyRepository(t, 'main')
       await makeCommit(repo, {
         entries: [{ path: 'README', contents: 'hello' }],
       })
@@ -67,11 +54,12 @@ describe('git/worktree', () => {
       const branches = await getWorktreeCheckedOutBranches(repo)
       assert(branches.has('refs/heads/feature-a'))
       assert(branches.has('refs/heads/feature-b'))
-      assert.strictEqual(branches.size, 2)
+      assert(branches.has('refs/heads/main'))
+      assert.strictEqual(branches.size, 3)
     })
 
     it('handles detached HEAD worktrees', async t => {
-      const repo = await setupEmptyRepository(t)
+      const repo = await setupEmptyRepository(t, 'main')
       await makeCommit(repo, {
         entries: [{ path: 'README', contents: 'hello' }],
       })
@@ -85,7 +73,9 @@ describe('git/worktree', () => {
 
       const branches = await getWorktreeCheckedOutBranches(repo)
       // Detached worktrees have no branch line in porcelain output
-      assert.strictEqual(branches.size, 0)
+      // but the main worktree branch is still included
+      assert.strictEqual(branches.size, 1)
+      assert(branches.has('refs/heads/main'))
     })
   })
 })

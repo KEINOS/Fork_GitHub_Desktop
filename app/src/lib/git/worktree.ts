@@ -3,9 +3,7 @@ import { Repository } from '../../models/repository'
 
 /**
  * Get the set of canonical branch refs (e.g. `refs/heads/feature`)
- * checked out in linked worktrees.
- *
- * Excludes the main worktree — that's already handled by the HEAD check.
+ * checked out in any worktree (main or linked).
  */
 export async function getWorktreeCheckedOutBranches(
   repository: Repository
@@ -20,8 +18,7 @@ export async function getWorktreeCheckedOutBranches(
 
   // With -z, lines are NUL-terminated and blocks are separated by
   // double NUL (i.e. an empty string between two NUL terminators).
-  // First block is always the main worktree — skip it.
-  const blocks = result.stdout.split('\0\0').slice(1)
+  const blocks = result.stdout.split('\0\0')
 
   for (const block of blocks) {
     for (const line of block.split('\0')) {
