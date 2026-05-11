@@ -152,8 +152,7 @@ export class RepositoriesStore extends TypedBaseStore<
       repo.missing,
       repo.alias,
       repo.workflowPreferences,
-      repo.isTutorialRepository,
-      repo.mainWorktreePath ?? null
+      repo.isTutorialRepository
     )
   }
 
@@ -288,8 +287,7 @@ export class RepositoriesStore extends TypedBaseStore<
       missing,
       repository.alias,
       repository.workflowPreferences,
-      repository.isTutorialRepository,
-      repository.mainWorktreePath
+      repository.isTutorialRepository
     )
   }
 
@@ -339,8 +337,7 @@ export class RepositoriesStore extends TypedBaseStore<
       false,
       repository.alias,
       repository.workflowPreferences,
-      repository.isTutorialRepository,
-      repository.mainWorktreePath
+      repository.isTutorialRepository
     )
   }
 
@@ -353,12 +350,10 @@ export class RepositoriesStore extends TypedBaseStore<
    *
    * @param repository  The repository to switch
    * @param worktreePath The path of the worktree to switch to
-   * @param mainWorktreePath The path of the main worktree (used as anchor)
    */
   public async switchWorktree(
     repository: Repository,
     worktreePath: string,
-    mainWorktreePath: string,
     missing = false
   ): Promise<{ repository: Repository; existingRepository: boolean }> {
     const existing = await this.db.repositories.get({ path: worktreePath })
@@ -373,7 +368,6 @@ export class RepositoriesStore extends TypedBaseStore<
     await this.db.repositories.update(repository.id, {
       path: worktreePath,
       missing,
-      mainWorktreePath,
     })
 
     this.emitUpdatedRepositories()
@@ -386,8 +380,7 @@ export class RepositoriesStore extends TypedBaseStore<
         missing,
         repository.alias,
         repository.workflowPreferences,
-        repository.isTutorialRepository,
-        mainWorktreePath
+        repository.isTutorialRepository
       ),
       existingRepository: false,
     }
@@ -535,8 +528,7 @@ export class RepositoriesStore extends TypedBaseStore<
       repo.missing,
       repo.alias,
       repo.workflowPreferences,
-      repo.isTutorialRepository,
-      repo.mainWorktreePath
+      repo.isTutorialRepository
     )
 
     assertIsRepositoryWithGitHubRepository(updatedRepo)
