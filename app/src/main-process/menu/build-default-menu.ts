@@ -383,6 +383,12 @@ export function buildDefaultMenu({
       },
       separator,
       {
+        id: 'create-worktree',
+        label: __DARWIN__ ? 'New Worktree…' : 'New &worktree…',
+        click: emit('create-worktree'),
+      },
+      separator,
+      {
         label: __DARWIN__ ? 'Repository Settings…' : 'Repository &settings…',
         id: 'show-repository-settings',
         click: emit('show-repository-settings'),

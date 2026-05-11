@@ -20,6 +20,7 @@ interface IRepositoryListItemContextMenuConfig {
   onRemoveRepository: (repository: Repositoryish) => void
   onChangeRepositoryAlias: (repository: Repository) => void
   onRemoveRepositoryAlias: (repository: Repository) => void
+  onCreateWorktree?: (repository: Repository) => void
 }
 
 export const generateRepositoryListContextMenu = (
@@ -38,6 +39,7 @@ export const generateRepositoryListContextMenu = (
 
   const items: ReadonlyArray<IMenuItem> = [
     ...buildAliasMenuItems(config),
+    ...buildWorktreeMenuItems(config),
     {
       label: __DARWIN__ ? 'Copy Repo Name' : 'Copy repo name',
       action: () => clipboard.writeText(repository.name),
@@ -102,4 +104,21 @@ const buildAliasMenuItems = (
   }
 
   return items
+}
+
+const buildWorktreeMenuItems = (
+  config: IRepositoryListItemContextMenuConfig
+): ReadonlyArray<IMenuItem> => {
+  const { repository, onCreateWorktree } = config
+
+  if (!(repository instanceof Repository) || onCreateWorktree === undefined) {
+    return []
+  }
+
+  return [
+    {
+      label: __DARWIN__ ? 'New Worktree…' : 'New worktree…',
+      action: () => onCreateWorktree(repository),
+    },
+  ]
 }

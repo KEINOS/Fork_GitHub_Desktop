@@ -459,6 +459,8 @@ export class App extends React.Component<IAppProps, IAppState> {
         return this.showBranches()
       case 'show-worktrees':
         return this.showWorktrees()
+      case 'create-worktree':
+        return this.showCreateWorktree()
       case 'remove-repository':
         return this.removeRepository(this.getRepository())
       case 'create-repository':
@@ -959,6 +961,18 @@ export class App extends React.Component<IAppProps, IAppState> {
     }
 
     return this.props.dispatcher.showFoldout({ type: FoldoutType.Worktree })
+  }
+
+  private showCreateWorktree() {
+    const state = this.state.selectedState
+    if (state == null || state.type !== SelectionType.Repository) {
+      return
+    }
+
+    this.props.dispatcher.showPopup({
+      type: PopupType.AddWorktree,
+      repository: state.repository,
+    })
   }
 
   private push(options?: { forceWithLease: boolean }) {
@@ -3228,6 +3242,13 @@ export class App extends React.Component<IAppProps, IAppState> {
       this.props.dispatcher.changeRepositoryAlias(repository, null)
     }
 
+    const onCreateWorktree = (repository: Repository) => {
+      this.props.dispatcher.showPopup({
+        type: PopupType.AddWorktree,
+        repository,
+      })
+    }
+
     const items = generateRepositoryListContextMenu({
       onRemoveRepository: this.removeRepository,
       onShowRepository: this.showRepository,
@@ -3239,6 +3260,7 @@ export class App extends React.Component<IAppProps, IAppState> {
       onChangeRepositoryAlias: onChangeRepositoryAlias,
       onRemoveRepositoryAlias: onRemoveRepositoryAlias,
       onViewOnGitHub: this.viewOnGitHub,
+      onCreateWorktree: onCreateWorktree,
       repository: repository,
       shellLabel: this.state.useCustomShell
         ? undefined
