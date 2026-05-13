@@ -11,7 +11,6 @@ import {
   RepositoryType,
 } from '../../lib/git'
 import { TextBox } from '../lib/text-box'
-import { Button } from '../lib/button'
 import { Row } from '../lib/row'
 import { Checkbox, CheckboxValue } from '../lib/checkbox'
 import { writeDefaultReadme } from './write-default-readme'
@@ -20,14 +19,12 @@ import { writeGitDescription } from '../../lib/git/description'
 import { getGitIgnoreNames, writeGitIgnore } from './gitignores'
 import { ILicense, getLicenses, writeLicense } from './licenses'
 import { writeGitAttributes } from './git-attributes'
-import { getDefaultDir, setDefaultDir } from '../lib/default-dir'
 import { Dialog, DialogContent, DialogFooter, DialogError } from '../dialog'
 import { LinkButton } from '../lib/link-button'
 import { PopupType } from '../../models/popup'
 import { Ref } from '../lib/ref'
 import { enableReadmeOverwriteWarning } from '../../lib/feature-flag'
 import { OkCancelButtonGroup } from '../dialog/ok-cancel-button-group'
-import { showOpenDialog } from '../main-process-proxy'
 import { pathExists } from '../lib/path-exists'
 import { mkdir } from 'fs/promises'
 import { directoryExists } from '../../lib/directory-exists'
@@ -37,6 +34,7 @@ import { isTopMostDialog } from '../dialog/is-top-most'
 import { InputError } from '../lib/input-description/input-error'
 import { InputWarning } from '../lib/input-description/input-warning'
 import { CreateRepositoryError } from '../../lib/error-with-metadata'
+import { RepositoryPath } from '../lib/repository-path'
 
 /** URL used to provide information about submodules to the user. */
 const submoduleDocsUrl = 'https://gh.io/git-submodules'
@@ -103,22 +101,6 @@ interface ICreateRepositoryState {
   readonly readMeExists: boolean
 }
 
-// We use this instead of sanitizedRepositoryName because it deals with
-// valid repository names on GitHub.com but here we only care about whether
-// we'll be able to create a directory with the given name. If a user
-// creates a repository with a name that GitHub.com doesn't like here it'll
-// get sanitized in the Publish dialog later on.
-//
-// Note that we don't sanitize `\` or `/` here since we use `Path.join` to
-// create the full path and that will handle those characters appropriately
-// letting users type something like OrgA\RepoB and have the new repo be
-// created in the OrgA folder.
-//
-// macOS and Linux allow are way more allowing so there's no need to sanitize
-const safeDirectoryName = (name: string) => {
-  return __WIN32__ ? name.replace(/[<>:"|?*]/g, '-').replace(/\s+$/, '') : name
-}
-
 /** The Create New Repository component. */
 export class CreateRepository extends React.Component<
   ICreateRepositoryProps,
@@ -147,7 +129,9 @@ export class CreateRepository extends React.Component<
       : null
 
     const name = this.props.initialPath
-      ? safeDirectoryName(Path.basename(this.props.initialPath))
+      ? RepositoryPath.getSafeDirectoryName(
+          Path.basename(this.props.initialPath)
+        )
       : ''
 
     this.state = {
@@ -179,7 +163,7 @@ export class CreateRepository extends React.Component<
 
     this.setState({ gitIgnoreNames, licenses })
 
-    const path = this.state.path ?? (await getDefaultDir())
+    const path = this.state.path ?? (await RepositoryPath.getDefaultPath())
 
     this.updateIsRepository(path, this.state.name)
     this.updateReadMeExists(path, this.state.name)
@@ -194,7 +178,7 @@ export class CreateRepository extends React.Component<
   }
 
   private initializePath = async () => {
-    const path = await getDefaultDir()
+    const path = await RepositoryPath.getDefaultPath()
     this.setState(s => (s.path === null ? { path } : null))
   }
 
@@ -219,7 +203,7 @@ export class CreateRepository extends React.Component<
   }
 
   private async updateIsRepository(path: string, name: string) {
-    const fullPath = Path.join(path, safeDirectoryName(name))
+    const fullPath = Path.join(path, RepositoryPath.getSafeDirectoryName(name))
 
     const type = await getRepositoryType(fullPath).catch(e => {
       log.error(`Unable to determine repository type`, e)
@@ -256,25 +240,16 @@ export class CreateRepository extends React.Component<
     this.setState({ description })
   }
 
-  private showFilePicker = async () => {
-    const path = await showOpenDialog({
-      properties: ['createDirectory', 'openDirectory'],
-    })
-
-    if (path === null) {
-      return
-    }
-
-    this.setState({ path, isRepository: false })
-    this.updateIsRepository(path, this.state.name)
-  }
-
   private async updateReadMeExists(path: string | null, name: string) {
     if (!enableReadmeOverwriteWarning() || path === null) {
       return
     }
 
-    const fullPath = Path.join(path, safeDirectoryName(name), 'README.md')
+    const fullPath = Path.join(
+      path,
+      RepositoryPath.getSafeDirectoryName(name),
+      'README.md'
+    )
     const readMeExists = await pathExists(fullPath)
 
     // Only update readMeExists if the path is still the same
@@ -296,7 +271,10 @@ export class CreateRepository extends React.Component<
       } catch {}
     }
 
-    return Path.join(currentPath, safeDirectoryName(this.state.name))
+    return Path.join(
+      currentPath,
+      RepositoryPath.getSafeDirectoryName(this.state.name)
+    )
   }
 
   private createRepository = async () => {
@@ -457,7 +435,7 @@ export class CreateRepository extends React.Component<
     // repository from an empty folder, because this value will be the
     // repository path itself
     if (!this.props.initialPath && this.state.path !== null) {
-      setDefaultDir(this.state.path)
+      RepositoryPath.setDefaultPath(this.state.path)
     }
   }
 
@@ -467,26 +445,6 @@ export class CreateRepository extends React.Component<
     this.setState({
       createWithReadme: event.currentTarget.checked,
     })
-  }
-
-  private renderSanitizedName() {
-    const sanitizedName = safeDirectoryName(this.state.name)
-    if (this.state.name === sanitizedName) {
-      return null
-    }
-
-    return (
-      <InputWarning
-        id="repo-sanitized-name-warning"
-        trackedUserInput={this.state.name}
-        ariaLiveMessage={`Will be created as ${sanitizedName}. Spaces and invalid characters have been replaced by hyphens.`}
-      >
-        <p>Will be created as {sanitizedName}</p>
-        <span className="sr-only">
-          Spaces and invalid characters have been replaced by hyphens.
-        </span>
-      </InputWarning>
-    )
   }
 
   private onGitIgnoreChange = (event: React.FormEvent<HTMLSelectElement>) => {
@@ -574,7 +532,7 @@ export class CreateRepository extends React.Component<
       return null
     }
 
-    const fullPath = Path.join(path, safeDirectoryName(name))
+    const fullPath = Path.join(path, RepositoryPath.getSafeDirectoryName(name))
 
     return (
       <Row>
@@ -601,7 +559,7 @@ export class CreateRepository extends React.Component<
       return null
     }
 
-    const fullPath = Path.join(path, safeDirectoryName(name))
+    const fullPath = Path.join(path, RepositoryPath.getSafeDirectoryName(name))
 
     return (
       <Row>
@@ -659,7 +617,7 @@ export class CreateRepository extends React.Component<
       return null
     }
 
-    const fullPath = Path.join(path, safeDirectoryName(name))
+    const fullPath = Path.join(path, RepositoryPath.getSafeDirectoryName(name))
 
     return (
       <div id="create-repo-path-msg">
@@ -677,7 +635,7 @@ export class CreateRepository extends React.Component<
     if (path !== null) {
       this.props.dispatcher.showPopup({
         type: PopupType.AddRepository,
-        path: Path.join(path, safeDirectoryName(name)),
+        path: Path.join(path, RepositoryPath.getSafeDirectoryName(name)),
       })
     }
   }
@@ -705,17 +663,16 @@ export class CreateRepository extends React.Component<
         {this.renderInvalidPathError()}
 
         <DialogContent>
-          <Row>
-            <TextBox
-              value={this.state.name}
-              label="Name"
-              placeholder="repository name"
-              onValueChanged={this.onNameChanged}
-              ariaDescribedBy="existing-repository-path-error repo-sanitized-name-warning"
-            />
-          </Row>
-
-          {this.renderSanitizedName()}
+          <RepositoryPath
+            name={this.state.name}
+            path={this.state.path}
+            onNameChanged={this.onNameChanged}
+            onPathChanged={this.onPathChanged}
+            namePlaceholder="repository name"
+            pathPlaceholder="repository path"
+            nameAriaDescribedBy="existing-repository-path-error repo-sanitized-name-warning"
+            pathAriaDescribedBy="existing-repository-path-error path-is-subfolder-of-repository"
+          />
 
           <Row>
             <TextBox
@@ -723,20 +680,6 @@ export class CreateRepository extends React.Component<
               label="Description"
               onValueChanged={this.onDescriptionChanged}
             />
-          </Row>
-
-          <Row>
-            <TextBox
-              value={this.state.path ?? ''}
-              label={__DARWIN__ ? 'Local Path' : 'Local path'}
-              placeholder="repository path"
-              onValueChanged={this.onPathChanged}
-              disabled={loadingDefaultDir}
-              ariaDescribedBy="existing-repository-path-error path-is-subfolder-of-repository"
-            />
-            <Button onClick={this.showFilePicker} disabled={loadingDefaultDir}>
-              Choose…
-            </Button>
           </Row>
 
           {this.renderGitRepositoryError()}

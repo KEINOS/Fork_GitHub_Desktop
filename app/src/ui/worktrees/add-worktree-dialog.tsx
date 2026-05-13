@@ -4,15 +4,14 @@ import { Branch } from '../../models/branch'
 import { Repository } from '../../models/repository'
 import { Dispatcher } from '../dispatcher'
 import { Dialog, DialogContent, DialogFooter } from '../dialog'
-import { TextBox } from '../lib/text-box'
 import { RefNameTextBox } from '../lib/ref-name-text-box'
-import { Button } from '../lib/button'
 import { Row } from '../lib/row'
 import { OkCancelButtonGroup } from '../dialog/ok-cancel-button-group'
-import { showOpenDialog } from '../main-process-proxy'
 import { addWorktree, listWorktrees } from '../../lib/git/worktree'
 import { BranchAutocompletionProvider } from '../autocompletion/branch-autocompletion-provider'
 import memoizeOne from 'memoize-one'
+import { RepositoryPath } from '../lib/repository-path'
+import { Ref } from '../lib/ref'
 
 interface IAddWorktreeDialogProps {
   readonly repository: Repository
@@ -23,7 +22,8 @@ interface IAddWorktreeDialogProps {
 }
 
 interface IAddWorktreeDialogState {
-  readonly path: string
+  readonly name: string
+  readonly path: string | null
   readonly branchName: string
   readonly creating: boolean
 }
@@ -41,10 +41,20 @@ export class AddWorktreeDialog extends React.Component<
     super(props)
 
     this.state = {
-      path: '',
+      name: '',
+      path: null,
       branchName: props.initialBranchName ?? '',
       creating: false,
     }
+  }
+
+  public async componentDidMount() {
+    const path = await RepositoryPath.getDefaultPath()
+    this.setState(s => (s.path === null ? { path } : null))
+  }
+
+  private onNameChanged = (name: string) => {
+    this.setState({ name })
   }
 
   private onPathChanged = (path: string) => {
@@ -55,31 +65,32 @@ export class AddWorktreeDialog extends React.Component<
     this.setState({ branchName })
   }
 
-  private showFilePicker = async () => {
-    const path = await showOpenDialog({
-      properties: ['createDirectory', 'openDirectory'],
-    })
-
-    if (path === null) {
-      return
-    }
-
-    this.setState({ path })
-  }
-
   private branchExists(name: string): boolean {
     return this.props.allBranches.some(b => b.name === name)
   }
 
+  private getFullPath(): string | null {
+    const { path, name } = this.state
+    if (path === null || name.trim().length === 0) {
+      return null
+    }
+    return RepositoryPath.getFullPath(path, name)
+  }
+
   private onSubmit = async () => {
-    const { path, branchName } = this.state
+    const fullPath = this.getFullPath()
+    const { branchName } = this.state
+
+    if (fullPath === null) {
+      return
+    }
 
     this.setState({ creating: true })
 
     const branchExists = this.branchExists(branchName)
 
     try {
-      await addWorktree(this.props.repository, path, {
+      await addWorktree(this.props.repository, fullPath, {
         branch: branchExists ? branchName : undefined,
         createBranch:
           !branchExists && branchName.length > 0 ? branchName : undefined,
@@ -92,7 +103,7 @@ export class AddWorktreeDialog extends React.Component<
 
     const { dispatcher, repository } = this.props
     const worktrees = await listWorktrees(repository)
-    const worktree = worktrees.find(wt => wt.path === path)
+    const worktree = worktrees.find(wt => wt.path === fullPath)
 
     if (!worktree) {
       this.props.dispatcher.postError(
@@ -126,8 +137,23 @@ export class AddWorktreeDialog extends React.Component<
     )
   }
 
+  private renderPathMessage() {
+    const fullPath = this.getFullPath()
+    if (fullPath === null) {
+      return null
+    }
+
+    return (
+      <div id="add-worktree-path-msg">
+        The worktree will be created at <Ref>{fullPath}</Ref>.
+      </div>
+    )
+  }
+
   public render() {
-    const disabled = this.state.path.length === 0 || this.state.creating
+    const fullPath = this.getFullPath()
+    const disabled = fullPath === null || this.state.creating
+    const loadingPath = this.state.path === null
 
     return (
       <Dialog
@@ -138,15 +164,16 @@ export class AddWorktreeDialog extends React.Component<
         onDismissed={this.props.onDismissed}
       >
         <DialogContent>
-          <Row>
-            <TextBox
-              value={this.state.path}
-              label={__DARWIN__ ? 'Worktree Path' : 'Worktree path'}
-              placeholder="worktree path"
-              onValueChanged={this.onPathChanged}
-            />
-            <Button onClick={this.showFilePicker}>Choose…</Button>
-          </Row>
+          <RepositoryPath
+            name={this.state.name}
+            path={this.state.path}
+            onNameChanged={this.onNameChanged}
+            onPathChanged={this.onPathChanged}
+            nameLabel={__DARWIN__ ? 'Worktree Name' : 'Worktree name'}
+            namePlaceholder="worktree name"
+            pathLabel={__DARWIN__ ? 'Local Path' : 'Local path'}
+            pathPlaceholder="worktree path"
+          />
 
           <Row>
             <RefNameTextBox
@@ -162,9 +189,10 @@ export class AddWorktreeDialog extends React.Component<
         </DialogContent>
 
         <DialogFooter>
+          {this.renderPathMessage()}
           <OkCancelButtonGroup
             okButtonText={__DARWIN__ ? 'Create Worktree' : 'Create worktree'}
-            okButtonDisabled={disabled}
+            okButtonDisabled={disabled || loadingPath}
           />
         </DialogFooter>
       </Dialog>
