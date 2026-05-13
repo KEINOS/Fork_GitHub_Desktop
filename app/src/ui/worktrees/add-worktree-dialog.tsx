@@ -125,18 +125,15 @@ export class AddWorktreeDialog extends React.Component<
 
   private renderBranchStatus() {
     const effectiveName = this.getEffectiveBranchName()
-    if (effectiveName.length === 0) {
+    if (effectiveName.length === 0 || !this.branchExists(effectiveName)) {
       return null
     }
 
-    const exists = this.branchExists(effectiveName)
-    const message = exists
-      ? `Will check out existing branch "${effectiveName}"`
-      : `Will create new branch "${effectiveName}"`
-
     return (
       <Row>
-        <p className="branch-status-hint">{message}</p>
+        <p className="branch-status-hint">
+          Will check out existing branch &ldquo;{effectiveName}&rdquo;
+        </p>
       </Row>
     )
   }
