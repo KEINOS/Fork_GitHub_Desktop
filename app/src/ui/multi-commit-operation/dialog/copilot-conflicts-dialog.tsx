@@ -347,8 +347,13 @@ export class CopilotConflictsDialog extends React.Component<
         operationKind={operationKind}
         emoji={emoji}
         gitHubRepository={repository.gitHubRepository}
+        onMarkdownLinkClicked={this.onMarkdownLinkClicked}
       />
     )
+  }
+
+  private onMarkdownLinkClicked = (url: string): void => {
+    this.props.dispatcher.openInBrowser(url)
   }
 
   private renderFileList(

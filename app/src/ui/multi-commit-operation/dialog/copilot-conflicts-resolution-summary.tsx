@@ -1,6 +1,5 @@
 import * as React from 'react'
 
-import { shell } from '../../../lib/app-shell'
 import { assertNever } from '../../../lib/fatal-error'
 import { Emoji } from '../../../lib/emoji'
 import {
@@ -20,6 +19,7 @@ interface ICopilotConflictsResolutionSummaryProps {
   readonly operationKind: MultiCommitOperationKind
   readonly emoji: Map<string, Emoji>
   readonly gitHubRepository: GitHubRepository | null
+  readonly onMarkdownLinkClicked: (url: string) => void
 }
 
 /**
@@ -94,16 +94,12 @@ export class CopilotConflictsResolutionSummary extends React.Component<ICopilotC
           markdown={markdown}
           emoji={this.props.emoji}
           repository={this.props.gitHubRepository ?? undefined}
-          onMarkdownLinkClicked={this.onMarkdownLinkClicked}
+          onMarkdownLinkClicked={this.props.onMarkdownLinkClicked}
           underlineLinks={true}
           ariaLabel="Copilot conflict resolution summary"
         />
       </div>
     )
-  }
-
-  private onMarkdownLinkClicked = (url: string): void => {
-    shell.openExternal(url)
   }
 
   private renderReferences(): JSX.Element | null {
@@ -118,7 +114,7 @@ export class CopilotConflictsResolutionSummary extends React.Component<ICopilotC
         <ul className="copilot-conflicts-summary-reference-list">
           {references.map((ref, i) => (
             <li
-              key={referenceKey(ref, i)}
+              key={`${ref.kind}-${i}`}
               className="copilot-conflicts-summary-reference-item"
             >
               {renderReference(ref)}
@@ -127,17 +123,6 @@ export class CopilotConflictsResolutionSummary extends React.Component<ICopilotC
         </ul>
       </div>
     )
-  }
-}
-
-function referenceKey(ref: IConflictContextReference, index: number): string {
-  switch (ref.kind) {
-    case 'pullRequest':
-      return `pr-${ref.pullRequest.number}`
-    case 'commit':
-      return `commit-${ref.commit.sha}-${index}`
-    default:
-      return assertNever(ref, `Unknown reference kind: ${ref}`)
   }
 }
 
