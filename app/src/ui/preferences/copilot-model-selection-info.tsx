@@ -20,6 +20,12 @@ interface ICopilotModelSelectionInfoState {
   readonly showCostDetails: boolean
 }
 
+/**
+ * This component renders information about a selected Copilot model,
+ * including a summary and a button to show more detailed information
+ * about the model and its associated credit costs. The detailed information
+ * is displayed in a popover when the button is clicked.
+ */
 export class CopilotModelSelectionInfo extends React.Component<
   ICopilotModelSelectionInfoProps,
   ICopilotModelSelectionInfoState
