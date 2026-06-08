@@ -142,6 +142,72 @@ describe('getPreferredDefaultModel', () => {
     assert.strictEqual(result, cheap)
   })
 
+  it('falls back to the cheapest model by token prices', () => {
+    const expensive = makeModel({
+      id: 'expensive',
+      name: 'Expensive',
+      billing: {
+        tokenPrices: {
+          batchSize: 1000000,
+          cachePrice: 500,
+          inputPrice: 2000,
+          outputPrice: 5000,
+        },
+      },
+    })
+    const cheap = makeModel({
+      id: 'cheap',
+      name: 'Cheap',
+      billing: {
+        tokenPrices: {
+          batchSize: 1000000,
+          cachePrice: 20,
+          inputPrice: 200,
+          outputPrice: 1200,
+        },
+      },
+    })
+    const mid = makeModel({
+      id: 'mid',
+      name: 'Mid',
+      billing: {
+        tokenPrices: {
+          batchSize: 1000000,
+          cachePrice: 100,
+          inputPrice: 1000,
+          outputPrice: 2500,
+        },
+      },
+    })
+    const result = getPreferredDefaultModel([expensive, mid, cheap])
+    assert.strictEqual(result, cheap)
+  })
+
+  it('normalizes token price costs by batch size', () => {
+    const smallerBatch = makeModel({
+      id: 'smaller-batch',
+      name: 'Smaller Batch',
+      billing: {
+        tokenPrices: {
+          batchSize: 1000,
+          inputPrice: 10,
+        },
+      },
+    })
+    const largerBatch = makeModel({
+      id: 'larger-batch',
+      name: 'Larger Batch',
+      billing: {
+        tokenPrices: {
+          batchSize: 1000000,
+          inputPrice: 100,
+        },
+      },
+    })
+    const result = getPreferredDefaultModel([smallerBatch, largerBatch])
+    assert.strictEqual(result, largerBatch)
+  })
+
   it('treats models without billing info as most expensive', () => {
     const noBilling = makeModel({
       id: 'no-billing',
@@ -181,30 +247,23 @@ describe('getPreferredDefaultModel', () => {
     assert.strictEqual(result, defaultModel)
   })
 
-  it('treats usage billing as unknown premium request cost', () => {
-    const usageBilled = makeModel({
-      id: 'usage-billed',
-      name: 'Usage Billed',
+  it('treats models without token prices as most expensive in usage billing', () => {
+    const noBilling = makeModel({
+      id: 'no-billing',
+      name: 'No Billing',
+    })
+    const withBilling = makeModel({
+      id: 'with-billing',
+      name: 'With Billing',
       billing: {
         tokenPrices: {
           batchSize: 1000000,
-          cachePrice: 50,
-          contextMax: 200000,
           inputPrice: 500,
-          outputPrice: 2500,
         },
       },
     })
-    const premiumRequestsBilled = makeModel({
-      id: 'premium-requests-billed',
-      name: 'Premium Requests Billed',
-      billing: { multiplier: 2 },
-    })
-    const result = getPreferredDefaultModel([
-      usageBilled,
-      premiumRequestsBilled,
-    ])
-    assert.strictEqual(result, premiumRequestsBilled)
+    const result = getPreferredDefaultModel([noBilling, withBilling])
+    assert.strictEqual(result, withBilling)
   })
 })
 

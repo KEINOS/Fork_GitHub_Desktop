@@ -43,7 +43,10 @@ import { BaseStore } from './base-store'
 import { IRepoRulesMetadataRule } from '../../models/repo-rules'
 import { pathExists } from '../path-exists'
 import { enableCopilotSdkCommitMessageGeneration } from '../feature-flag'
-import { Model } from '@github/copilot-sdk/dist/generated/rpc'
+import {
+  Model,
+  ModelBillingTokenPrices,
+} from '@github/copilot-sdk/dist/generated/rpc'
 
 /** The default model ID used for Copilot commit message generation. */
 export const DefaultCopilotModel = 'gpt-5-mini'
@@ -363,10 +366,57 @@ export function getSupportedReasoningEffort(
     : getLowestReasoningEffort(model)
 }
 
+type ModelBillingKind = 'premium-requests' | 'usage'
+
+function getModelBillingKind(
+  models: ReadonlyArray<Model>
+): ModelBillingKind | null {
+  if (models.some(m => m.billing?.multiplier !== undefined)) {
+    return 'premium-requests'
+  }
+
+  return models.some(m => m.billing?.tokenPrices !== undefined) ? 'usage' : null
+}
+
+function getTokenPriceCost(tokenPrices: ModelBillingTokenPrices): number {
+  const batchSize = tokenPrices.batchSize
+  if (batchSize === undefined || batchSize <= 0) {
+    return Infinity
+  }
+
+  const prices = [
+    tokenPrices.inputPrice,
+    tokenPrices.cachePrice,
+    tokenPrices.outputPrice,
+  ]
+  const knownPrices = prices.filter(
+    (price): price is number => price !== undefined
+  )
+
+  return knownPrices.length === 0
+    ? Infinity
+    : knownPrices.reduce((sum, price) => sum + price, 0) / batchSize
+}
+
+function getModelBillingCost(model: Model, kind: ModelBillingKind | null) {
+  switch (kind) {
+    case 'premium-requests':
+      return model.billing?.multiplier ?? Infinity
+    case 'usage': {
+      const tokenPrices = model.billing?.tokenPrices
+      return tokenPrices === undefined
+        ? Infinity
+        : getTokenPriceCost(tokenPrices)
+    }
+    case null:
+      return Infinity
+  }
+}
+
 /**
  * Selects the model to use for commit message generation. Prefers
  * `DefaultCopilotModel` if it is in the list; otherwise falls back to the
- * cheapest available model by premium request billing multiplier.
+ * cheapest available model by its billing metadata.
  *
  * Returns null if the model list is empty.
  */
@@ -382,12 +432,13 @@ export function getPreferredDefaultModel(
     return defaultModel
   }
 
-  // Default model unavailable — pick the cheapest one. Models without a
-  // premium request multiplier are treated as most expensive (unknown cost) so
-  // we don't accidentally pick a costly model.
+  // Default model unavailable — pick the cheapest one. Models without billing
+  // metadata for the active billing kind are treated as most expensive
+  // (unknown cost) so we don't accidentally pick a costly model.
+  const billingKind = getModelBillingKind(models)
   return [...models].sort(
     (a, b) =>
-      (a.billing?.multiplier ?? Infinity) - (b.billing?.multiplier ?? Infinity)
+      getModelBillingCost(a, billingKind) - getModelBillingCost(b, billingKind)
   )[0]
 }
 
