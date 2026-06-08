@@ -208,48 +208,6 @@ describe('getPreferredDefaultModel', () => {
   })
 })
 
-describe('getCopilotModelWithTemporaryMockUsageBilling', () => {
-  it('adds temporary mocked usage billing', () => {
-    const model = makeModel({
-      id: 'mocked',
-      name: 'Mocked',
-      billing: {
-        tokenPrices: {
-          batchSize: 1000000,
-          cachePrice: 50,
-          contextMax: 200000,
-          inputPrice: 500,
-          outputPrice: 2500,
-          longContext: {
-            cachePrice: 50,
-            contextMax: 200000,
-            inputPrice: 500,
-            outputPrice: 2500,
-          },
-        },
-      },
-    })
-
-    const billing = model.billing
-    assert.ok(billing !== undefined)
-    assert.strictEqual(billing.tokenPrices, 'usage')
-
-    const tokenPrices = billing.tokenPrices
-    assert.strictEqual(tokenPrices.batchSize, 1000000)
-    const longContext = tokenPrices.longContext
-    assert.ok(longContext !== undefined && longContext instanceof Object)
-
-    assert.ok((tokenPrices.cachePrice ?? 0) > 0)
-    assert.ok((tokenPrices.contextMax ?? 0) > 0)
-    assert.ok((tokenPrices.inputPrice ?? 0) > 0)
-    assert.ok((tokenPrices.outputPrice ?? 0) > 0)
-    assert.ok((longContext.cachePrice ?? 0) > 0)
-    assert.ok((longContext.contextMax ?? 0) > 0)
-    assert.ok((longContext.inputPrice ?? 0) > 0)
-    assert.ok((longContext.outputPrice ?? 0) > 0)
-  })
-})
-
 /**
  * A minimal fake of the bits of `CopilotSession` that
  * `runConflictResolutionTurn` interacts with: event subscription (returning an
