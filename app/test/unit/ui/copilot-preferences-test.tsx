@@ -157,11 +157,19 @@ class TestListResizeObserver implements ResizeObserver {
   public disconnect() {}
 }
 
-const originalGlobalResizeObserver = globalThis.ResizeObserver
-const originalWindowResizeObserver =
-  typeof window !== 'undefined' ? window.ResizeObserver : undefined
+let hadGlobalResizeObserver = false
+let originalGlobalResizeObserver: typeof ResizeObserver | undefined
+let hadWindowResizeObserver = false
+let originalWindowResizeObserver: typeof ResizeObserver | undefined
 
 beforeEach(() => {
+  hadGlobalResizeObserver = 'ResizeObserver' in globalThis
+  originalGlobalResizeObserver = globalThis.ResizeObserver
+  hadWindowResizeObserver =
+    typeof window !== 'undefined' && 'ResizeObserver' in window
+  originalWindowResizeObserver =
+    typeof window !== 'undefined' ? window.ResizeObserver : undefined
+
   Object.assign(globalThis, { ResizeObserver: TestListResizeObserver })
 
   if (typeof window !== 'undefined') {
@@ -170,10 +178,18 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  Object.assign(globalThis, { ResizeObserver: originalGlobalResizeObserver })
+  if (hadGlobalResizeObserver) {
+    Object.assign(globalThis, { ResizeObserver: originalGlobalResizeObserver })
+  } else {
+    Reflect.deleteProperty(globalThis, 'ResizeObserver')
+  }
 
   if (typeof window !== 'undefined') {
-    Object.assign(window, { ResizeObserver: originalWindowResizeObserver })
+    if (hadWindowResizeObserver) {
+      Object.assign(window, { ResizeObserver: originalWindowResizeObserver })
+    } else {
+      Reflect.deleteProperty(window, 'ResizeObserver')
+    }
   }
 })
 
