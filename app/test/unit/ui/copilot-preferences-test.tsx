@@ -316,7 +316,9 @@ describe('CopilotPreferences', () => {
     )
 
     assert.ok(
-      screen.getByText('Sign in to an account to configure Copilot settings.')
+      screen.getByText(
+        'Sign in to an account with a Copilot license to configure Copilot settings.'
+      )
     )
 
     const signInButton = screen.getByRole('button', {
@@ -346,7 +348,9 @@ describe('CopilotPreferences', () => {
     )
 
     assert.ok(
-      screen.getByText('Sign in to an account to configure Copilot settings.')
+      screen.getByText(
+        'Sign in to an account with a Copilot license to configure Copilot settings.'
+      )
     )
     assert.strictEqual(screen.queryByText('Checking Copilot access…'), null)
     assert.strictEqual(screen.queryByRole('combobox'), null)
