@@ -748,6 +748,9 @@ export class CopilotStore extends BaseStore {
         ELECTRON_RUN_AS_NODE: '1',
         COPILOT_RUN_APP: '1',
         GH_HOST: getCopilotGHHost(account),
+        GITHUB_COPILOT_INTEGRATION_ID: `copilot-desktop${
+          __DEV__ ? '-dev' : ''
+        }`,
       },
       workingDirectory: repositoryPath,
       gitHubToken: account.token,
