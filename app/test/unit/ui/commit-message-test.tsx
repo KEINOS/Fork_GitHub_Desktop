@@ -24,7 +24,7 @@ type CopilotButtonProps = {
   readonly disabled?: boolean
 }
 
-type CommitMessageTestInstance = CommitMessage & {
+type CommitMessageTestInstance = {
   readonly renderCopilotButton: () => React.ReactElement | null
   readonly onCopilotButtonClick: (
     event: Pick<React.MouseEvent<HTMLButtonElement>, 'preventDefault'>
@@ -148,12 +148,16 @@ function getCopilotButtonProps(
   component: CommitMessageTestInstance
 ): CopilotButtonProps {
   const button = component.renderCopilotButton()
-  assert.notEqual(button, null)
+  if (button === null) {
+    throw new Error('Expected Copilot button to render')
+  }
 
   const buttonElement = React.Children.toArray(button.props.children).find(
     isElementWithCopilotButtonProps
   )
-  assert.notEqual(buttonElement, undefined)
+  if (buttonElement === undefined) {
+    throw new Error('Expected Copilot button element to render')
+  }
 
   return buttonElement.props
 }
