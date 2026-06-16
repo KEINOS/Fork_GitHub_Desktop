@@ -35,6 +35,7 @@ interface ICopilotConflictsChangesProps {
 interface ICopilotConflictsChangesState {
   readonly selectedFile: CommittedFileChange | null
   readonly diff: IDiff | null
+  readonly noResolution: boolean
   readonly showSideBySideDiff: boolean
   readonly hideWhitespaceInDiff: boolean
   readonly imageDiffType: ImageDiffType
@@ -63,6 +64,7 @@ export class CopilotConflictsChanges extends React.Component<
     this.state = {
       selectedFile: files.length > 0 ? files[0] : null,
       diff: null,
+      noResolution: false,
       showSideBySideDiff: false,
       hideWhitespaceInDiff: false,
       imageDiffType: ImageDiffType.TwoUp,
@@ -148,7 +150,7 @@ export class CopilotConflictsChanges extends React.Component<
     )
 
     if (choice === 'ours' || choice === 'theirs') {
-      this.setState({ diff: null })
+      this.setState({ diff: null, noResolution: false })
       try {
         const diff = await getResolutionDiff(
           this.props.repository,
@@ -174,11 +176,11 @@ export class CopilotConflictsChanges extends React.Component<
     )
 
     if (resolution === undefined) {
-      this.setState({ diff: null })
+      this.setState({ diff: null, noResolution: true })
       return
     }
 
-    this.setState({ diff: null })
+    this.setState({ diff: null, noResolution: false })
 
     try {
       const diff = await getResolutionDiff(
@@ -239,10 +241,14 @@ export class CopilotConflictsChanges extends React.Component<
   }
 
   private onToggleSubheaderExpanded = () => {
-    this.setState(prev => ({
-      isSubheaderExpanded: !prev.isSubheaderExpanded,
-      isSubheaderOverflowed: false,
-    }))
+    this.setState(
+      prev => ({ isSubheaderExpanded: !prev.isSubheaderExpanded }),
+      () => {
+        if (!this.state.isSubheaderExpanded) {
+          requestAnimationFrame(() => this.updateSubheaderOverflow())
+        }
+      }
+    )
   }
 
   private onSubheaderRef = (ref: HTMLDivElement | null) => {
@@ -278,13 +284,21 @@ export class CopilotConflictsChanges extends React.Component<
       return `Using changes from ${this.props.theirBranch ?? 'incoming branch'}`
     }
     const resolution = this.props.copilotResolutions?.find(r => r.path === path)
-    return resolution?.reasoning ?? "Using Copilot's merged resolution"
+    if (resolution === undefined) {
+      return 'No Copilot resolution available'
+    }
+    return resolution.reasoning ?? "Using Copilot's merged resolution"
   }
 
   public render() {
     const files = this.getCommittedFiles()
-    const { selectedFile, diff, showSideBySideDiff, hideWhitespaceInDiff } =
-      this.state
+    const {
+      selectedFile,
+      diff,
+      noResolution,
+      showSideBySideDiff,
+      hideWhitespaceInDiff,
+    } = this.state
 
     const choice =
       selectedFile !== null
@@ -376,7 +390,7 @@ export class CopilotConflictsChanges extends React.Component<
                 </div>
               </div>
             )}
-            {selectedFile !== null && (
+            {selectedFile !== null && !noResolution && (
               <SeamlessDiffSwitcher
                 repository={this.props.repository}
                 readOnly={true}
@@ -393,7 +407,7 @@ export class CopilotConflictsChanges extends React.Component<
                 }
               />
             )}
-            {selectedFile !== null && diff === null && (
+            {selectedFile !== null && noResolution && (
               <div className="copilot-changes-no-diff">
                 No Copilot resolution available for this file.
               </div>

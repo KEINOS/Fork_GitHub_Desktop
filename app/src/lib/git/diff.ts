@@ -410,7 +410,6 @@ export async function getWorkingDirectoryDiff(
  * what changed relative to the last clean version — no conflict markers.
  *
  * When `content` is `'ours'` or `'theirs'`, the content is read from
- * When `content` is `'ours'` or `'theirs'`, the content is read from
  * the corresponding merge index stage (`git show :2:<path>` or
  * `git show :3:<path>`). These always refer to git's definition:
  * `ours` = stage 2 (HEAD at merge time), `theirs` = stage 3 (the commit
