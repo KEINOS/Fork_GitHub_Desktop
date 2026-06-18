@@ -56,7 +56,6 @@ import { join } from 'path'
 import assert from 'assert'
 
 const isPublishableBuild = isPublishable()
-const isNonProductionRelease = getChannel() !== 'production'
 const isDevelopmentBuild = getChannel() === 'development'
 const shouldSkipPackaging = process.env.DESKTOP_SKIP_PACKAGE === '1'
 
