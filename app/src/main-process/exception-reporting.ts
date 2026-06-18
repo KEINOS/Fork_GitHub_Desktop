@@ -2,9 +2,6 @@ import { app, net } from 'electron'
 import { getArchitecture } from '../lib/get-architecture'
 import { getMainGUID } from '../lib/get-main-guid'
 
-const ErrorEndpoint = __ERROR_REPORTING_ENDPOINT__
-const NonFatalErrorEndpoint = __NON_FATAL_ERROR_REPORTING_ENDPOINT__
-
 let hasSentFatalError = false
 
 /** Report the error to Central. */
@@ -17,7 +14,9 @@ export async function reportError(
     return
   }
 
-  const url = nonFatal ? NonFatalErrorEndpoint : ErrorEndpoint
+  const url = nonFatal
+    ? __NON_FATAL_ERROR_REPORTING_ENDPOINT__
+    : __ERROR_REPORTING_ENDPOINT__
   if (url === undefined) {
     return
   }
