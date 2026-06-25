@@ -1049,7 +1049,7 @@ export class CopilotStore extends BaseStore {
 
       // Stop the client after use
       if (client !== null) {
-        await this.stopClient(client)
+        this.stopClient(client)
       }
     }
   }
@@ -1252,7 +1252,7 @@ export class CopilotStore extends BaseStore {
         references: firstReferences,
       }
     } finally {
-      await this.stopClient(client)
+      this.stopClient(client)
     }
   }
 
@@ -1479,7 +1479,7 @@ export class CopilotStore extends BaseStore {
       // We can switch back to `ModelInfo` once the SDK updates its types.
       return await client.listModels()
     } finally {
-      await this.stopClient(client)
+      this.stopClient(client)
     }
   }
 }
