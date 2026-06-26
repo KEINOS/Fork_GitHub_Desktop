@@ -77,14 +77,20 @@ const memoizedGetExecPathFromGit = memoizeOne(
         debug(`Failed to get GIT_EXEC_PATH from Git`, err)
         return undefined
       }),
-  (xArgs, yArgs) =>
-    // git --exec-path is only affected by the GIT_EXEC_PATH environment
-    // variable. If that's not set it'll only spit out compile time constants so
-    // we can memoize it based on just the path to the Git binary. Note that
-    // theoretically this could mean that Apple ships a new version of Git which
-    // has a different compile time GIT_EXEC_PATH but that should be rare enough
-    // that we can get away with not worrying about cache invalidation here.
-    xArgs[0] === yArgs[0] && xArgs[1].GIT_EXEC_PATH === yArgs[1].GIT_EXEC_PATH
+  // memoize-one invokes this equality function once per argument as
+  // (newArg, lastArg), not with the full argument arrays. The first argument
+  // is the path to the Git binary (a string) and the second is the
+  // environment object.
+  //
+  // git --exec-path is only affected by the GIT_EXEC_PATH environment
+  // variable. If that's not set it'll only spit out compile time constants so
+  // we can memoize it based on just the path to the Git binary and the value
+  // of GIT_EXEC_PATH. Note that theoretically this could mean that Apple ships
+  // a new version of Git which has a different compile time GIT_EXEC_PATH but
+  // that should be rare enough that we can get away with not worrying about
+  // cache invalidation here.
+  (a, b) =>
+    typeof a === 'string' ? a === b : a?.GIT_EXEC_PATH === b?.GIT_EXEC_PATH
 )
 
 // We're invoking our own built-in Git binary here (git hook run) because we
