@@ -133,8 +133,6 @@ const ensureGitExecPathEnv = async (shellEnv: ShellEnvResult) => {
     if (execPath) {
       debug(`Setting GIT_EXEC_PATH from system git (${execPath})`)
       return { ...shellEnv, env: { ...shellEnv.env, GIT_EXEC_PATH: execPath } }
-    } else {
-      debug(`Failed to find system git`)
     }
   }
 
