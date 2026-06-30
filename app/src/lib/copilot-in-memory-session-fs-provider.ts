@@ -4,6 +4,7 @@ import type {
   SessionFsProvider,
 } from '@github/copilot-sdk'
 import type { SessionFsReaddirWithTypesEntry } from '@github/copilot-sdk/dist/generated/rpc'
+import { posix } from 'path'
 
 const InMemorySessionFsStatePath = 'state'
 
@@ -13,7 +14,10 @@ export function getCopilotInMemorySessionFsConfig(
   return {
     initialCwd: repositoryPath ?? process.cwd(),
     sessionStatePath: InMemorySessionFsStatePath,
-    conventions: __WIN32__ ? 'windows' : 'posix',
+    // The runtime uses this only to construct virtual SessionFs paths before
+    // sending them to the provider, so POSIX keeps the in-memory implementation
+    // much simpler.
+    conventions: 'posix',
   }
 }
 
@@ -32,14 +36,12 @@ export function createCopilotInMemorySessionFsProvider(): SessionFsProvider {
   const directories = new Set<string>(['.', InMemorySessionFsStatePath])
 
   const normalizePath = (path: string) => {
-    const normalized = path.replace(/\\/g, '/').replace(/\/+/g, '/')
-    return normalized === '' ? '.' : normalized.replace(/\/$/, '')
+    return posix.normalize(path)
   }
 
   const getParentPath = (path: string) => {
     const normalized = normalizePath(path)
-    const index = normalized.lastIndexOf('/')
-    return index > 0 ? normalized.slice(0, index) : '.'
+    return posix.dirname(normalized)
   }
 
   const addDirectory = (path: string) => {
