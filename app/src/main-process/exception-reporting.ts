@@ -1,4 +1,5 @@
 import { app, net } from 'electron'
+import { createHash } from 'crypto'
 import * as path from 'path'
 import { getArchitecture } from '../lib/get-architecture'
 import { getFileHash } from '../lib/get-file-hash'
@@ -6,31 +7,31 @@ import { getMainGUID } from '../lib/get-main-guid'
 
 let hasSentFatalError = false
 
-/** Cached bundle hashes, computed on first error report. */
-let cachedBundleHashes: { main: string; renderer: string } | null = null
+/** Cached combined bundle hash, computed on first error report. */
+let cachedBundleHash: string | null = null
 
 /**
- * Compute SHA-256 hashes of the installed main.js and renderer.js bundles.
+ * Compute a combined SHA-256 hash representing the integrity of the installed
+ * main.js and renderer.js bundles.
  *
- * Results are cached for the lifetime of the process since bundle files don't
- * change while the app is running.
+ * The result is cached for the lifetime of the process since bundle files
+ * don't change while the app is running.
  */
-async function getBundleHashes(): Promise<{
-  main: string
-  renderer: string
-} | null> {
-  if (cachedBundleHashes !== null) {
-    return cachedBundleHashes
+async function getBundleHash(): Promise<string | null> {
+  if (cachedBundleHash !== null) {
+    return cachedBundleHash
   }
 
   try {
     const appPath = app.getAppPath()
-    const [main, renderer] = await Promise.all([
+    const [mainHash, rendererHash] = await Promise.all([
       getFileHash(path.join(appPath, 'main.js'), 'sha256'),
       getFileHash(path.join(appPath, 'renderer.js'), 'sha256'),
     ])
-    cachedBundleHashes = { main, renderer }
-    return cachedBundleHashes
+    cachedBundleHash = createHash('sha256')
+      .update(mainHash + rendererHash)
+      .digest('hex')
+    return cachedBundleHash
   } catch {
     return null
   }
@@ -79,10 +80,9 @@ export async function reportError(
   data.set('version', app.getVersion())
   data.set('guid', await getMainGUID())
 
-  const bundleHashes = await getBundleHashes()
-  if (bundleHashes !== null) {
-    data.set('mainBundleHash', bundleHashes.main)
-    data.set('rendererBundleHash', bundleHashes.renderer)
+  const bundleHash = await getBundleHash()
+  if (bundleHash !== null) {
+    data.set('bundleHash', bundleHash)
   }
 
   if (extra) {
