@@ -26,12 +26,19 @@ describe('getCopilotInMemorySessionFsConfig', () => {
     )
   })
 
-  it('falls back to process cwd when no repository path is provided', () => {
-    assert.deepStrictEqual(getCopilotInMemorySessionFsConfig(), {
-      initialCwd: process.cwd(),
-      sessionStatePath: 'state',
-      conventions: 'posix',
-    })
+  it('falls back to a normalized process cwd when no repository path is provided', () => {
+    const originalCwd = process.cwd
+
+    process.cwd = () => 'D:\\a\\desktop\\desktop'
+    try {
+      assert.deepStrictEqual(getCopilotInMemorySessionFsConfig(), {
+        initialCwd: '/d/a/desktop/desktop',
+        sessionStatePath: 'state',
+        conventions: 'posix',
+      })
+    } finally {
+      process.cwd = originalCwd
+    }
   })
 })
 
