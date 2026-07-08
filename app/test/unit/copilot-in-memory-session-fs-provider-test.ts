@@ -6,58 +6,38 @@ import {
   getCopilotInMemorySessionFsConfig,
 } from '../../src/lib/copilot-in-memory-session-fs-provider'
 
-function withProcessPlatform<T>(platform: NodeJS.Platform, callback: () => T) {
-  const descriptor = Object.getOwnPropertyDescriptor(process, 'platform')
-
-  Object.defineProperty(process, 'platform', {
-    configurable: true,
-    value: platform,
-  })
-
-  try {
-    return callback()
-  } finally {
-    if (descriptor !== undefined) {
-      Object.defineProperty(process, 'platform', descriptor)
-    }
-  }
-}
-
 describe('getCopilotInMemorySessionFsConfig', () => {
   it('uses a POSIX session filesystem rooted in the in-memory state directory', () => {
-    withProcessPlatform('linux', () => {
-      assert.deepStrictEqual(getCopilotInMemorySessionFsConfig('/repo'), {
+    assert.deepStrictEqual(
+      getCopilotInMemorySessionFsConfig('/repo', 'posix'),
+      {
         initialCwd: '/repo',
         sessionStatePath: 'state',
         conventions: 'posix',
-      })
-    })
+      }
+    )
   })
 
   it('normalizes Windows repository paths for POSIX session filesystem conventions on non-Windows platforms', () => {
-    withProcessPlatform('linux', () => {
-      assert.deepStrictEqual(
-        getCopilotInMemorySessionFsConfig('C:\\repo\\project'),
-        {
-          initialCwd: '/c/repo/project',
-          sessionStatePath: 'state',
-          conventions: 'posix',
-        }
-      )
-    })
+    assert.deepStrictEqual(
+      getCopilotInMemorySessionFsConfig('C:\\repo\\project', 'posix'),
+      {
+        initialCwd: '/c/repo/project',
+        sessionStatePath: 'state',
+        conventions: 'posix',
+      }
+    )
   })
 
-  it('uses Windows session filesystem conventions on Windows', () => {
-    withProcessPlatform('win32', () => {
-      assert.deepStrictEqual(
-        getCopilotInMemorySessionFsConfig('C:\\repo\\project'),
-        {
-          initialCwd: 'C:\\repo\\project',
-          sessionStatePath: 'state',
-          conventions: 'windows',
-        }
-      )
-    })
+  it('uses Windows session filesystem conventions', () => {
+    assert.deepStrictEqual(
+      getCopilotInMemorySessionFsConfig('C:\\repo\\project', 'windows'),
+      {
+        initialCwd: 'C:\\repo\\project',
+        sessionStatePath: 'state',
+        conventions: 'windows',
+      }
+    )
   })
 
   it('falls back to a normalized process cwd when no repository path is provided', () => {
@@ -65,13 +45,14 @@ describe('getCopilotInMemorySessionFsConfig', () => {
 
     process.cwd = () => 'D:\\a\\desktop\\desktop'
     try {
-      withProcessPlatform('linux', () => {
-        assert.deepStrictEqual(getCopilotInMemorySessionFsConfig(), {
+      assert.deepStrictEqual(
+        getCopilotInMemorySessionFsConfig(undefined, 'posix'),
+        {
           initialCwd: '/d/a/desktop/desktop',
           sessionStatePath: 'state',
           conventions: 'posix',
-        })
-      })
+        }
+      )
     } finally {
       process.cwd = originalCwd
     }
@@ -82,13 +63,14 @@ describe('getCopilotInMemorySessionFsConfig', () => {
 
     process.cwd = () => 'D:\\a\\desktop\\desktop'
     try {
-      withProcessPlatform('win32', () => {
-        assert.deepStrictEqual(getCopilotInMemorySessionFsConfig(), {
+      assert.deepStrictEqual(
+        getCopilotInMemorySessionFsConfig(undefined, 'windows'),
+        {
           initialCwd: 'D:\\a\\desktop\\desktop',
           sessionStatePath: 'state',
           conventions: 'windows',
-        })
-      })
+        }
+      )
     } finally {
       process.cwd = originalCwd
     }

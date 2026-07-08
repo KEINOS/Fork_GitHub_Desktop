@@ -32,11 +32,9 @@ function normalizeCopilotInMemorySessionFsInitialCwd(
 }
 
 export function getCopilotInMemorySessionFsConfig(
-  repositoryPath?: string
+  repositoryPath: string | undefined,
+  conventions: SessionFsConfig['conventions']
 ): SessionFsConfig {
-  const conventions: SessionFsConfig['conventions'] =
-    process.platform === 'win32' ? 'windows' : 'posix'
-
   return {
     initialCwd: normalizeCopilotInMemorySessionFsInitialCwd(
       repositoryPath ?? process.cwd(),
