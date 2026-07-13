@@ -6,6 +6,9 @@ import { Repository } from '../../../models/repository'
 import {
   WorkingDirectoryStatus,
   WorkingDirectoryFileChange,
+  isConflictWithMarkers,
+  isManualConflict,
+  GitStatusEntry,
 } from '../../../models/status'
 import {
   isConflictedFile,
@@ -161,6 +164,32 @@ export class ConflictsDialog extends React.Component<
   private openThisRepositoryInShell = () =>
     this.props.openRepositoryInShell(this.props.repository)
 
+  /**
+   * Returns true when at least one conflicted file can be resolved by
+   * Copilot: either a text conflict (ConflictsWithMarkers) or a
+   * delete-vs-modify conflict. Files like BothDeleted are excluded.
+   */
+  private hasCopilotResolvableFiles(): boolean {
+    const { workingDirectory, manualResolutions } = this.props
+    const conflicted = getConflictedFiles(workingDirectory, manualResolutions)
+    return conflicted.some(f => {
+      if (!isConflictedFile(f.status)) {
+        return false
+      }
+      if (isConflictWithMarkers(f.status)) {
+        return true
+      }
+      // Delete-vs-modify ManualConflict is resolvable
+      if (isManualConflict(f.status)) {
+        const { us, them } = f.status.entry
+        return (
+          (us === GitStatusEntry.Deleted) !== (them === GitStatusEntry.Deleted)
+        )
+      }
+      return false
+    })
+  }
+
   private setIsFileResolutionOptionsMenuOpen = (
     isFileResolutionOptionsMenuOpen: boolean
   ) => {
@@ -267,6 +296,8 @@ export class ConflictsDialog extends React.Component<
    * - There is at least one signed-in account with Copilot for Desktop
    *   enabled (covers "no Copilot subscription" and "disabled by org policy")
    * - There are still conflicted files to resolve
+   * - At least one conflicted file can be handled by Copilot (has text
+   *   conflict markers or is a delete-vs-modify conflict)
    */
   private renderCopilotButton(
     conflictedFilesCount: number
@@ -277,7 +308,9 @@ export class ConflictsDialog extends React.Component<
       onResolveWithCopilot === undefined ||
       !enableCopilotConflictResolution() ||
       conflictedFilesCount === 0 ||
-      getAccountForCopilotConflictResolution(accounts, repository) === undefined
+      getAccountForCopilotConflictResolution(accounts, repository) ===
+        undefined ||
+      !this.hasCopilotResolvableFiles()
     ) {
       return null
     }

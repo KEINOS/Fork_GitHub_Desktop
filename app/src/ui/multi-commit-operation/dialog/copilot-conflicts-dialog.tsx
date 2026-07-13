@@ -11,6 +11,7 @@ import {
   WorkingDirectoryStatus,
   WorkingDirectoryFileChange,
   isConflictWithMarkers,
+  isManualConflict,
 } from '../../../models/status'
 import { getUnmergedFiles, isConflictedFile } from '../../../lib/status'
 import { assertNever } from '../../../lib/fatal-error'
@@ -44,6 +45,10 @@ import {
   CopilotFileResolutionChoice,
   getResolutionChoiceForFile,
   resolutionChoices,
+  isDeleteConflictFile,
+  getDeletedSide,
+  getDeleteConflictLabels,
+  getDeleteConflictChoiceLabel,
 } from './copilot-resolution-helpers'
 
 interface ICopilotConflictsDialogProps {
@@ -147,6 +152,42 @@ export class CopilotConflictsDialog extends React.Component<
   private onResolutionDropdownClick = (path: string) => {
     const currentChoice = this.getResolutionForFile(path)
     const { ourBranch, theirBranch } = this.props.conflictState
+    const fileStatus = this.getConflictedFileStatus(path)
+
+    // Delete-vs-modify conflicts get "Keep file" / "Delete file" labels
+    // instead of "Current" / "Incoming", and still include Copilot's
+    // suggestion as an option.
+    if (fileStatus !== undefined && isDeleteConflictFile(fileStatus)) {
+      const { oursLabel, theirsLabel } = getDeleteConflictLabels(
+        fileStatus,
+        ourBranch,
+        theirBranch
+      )
+
+      const items: ReadonlyArray<IMenuItem> = [
+        {
+          label: "Use Copilot's suggestion",
+          type: 'checkbox',
+          checked: currentChoice === 'copilot',
+          action: () => this.setResolution(path, 'copilot'),
+        },
+        {
+          label: oursLabel,
+          type: 'checkbox',
+          checked: currentChoice === 'ours',
+          action: () => this.setResolution(path, 'ours'),
+        },
+        {
+          label: theirsLabel,
+          type: 'checkbox',
+          checked: currentChoice === 'theirs',
+          action: () => this.setResolution(path, 'theirs'),
+        },
+      ]
+
+      showContextualMenu(items)
+      return
+    }
 
     const oursLabel = ourBranch
       ? `Use current file from ${ourBranch}`
@@ -251,6 +292,14 @@ export class CopilotConflictsDialog extends React.Component<
     return this.props.copilotResolutions?.find(r => r.path === path)
   }
 
+  private getConflictedFileStatus(path: string) {
+    const file = this.props.workingDirectory.files.find(f => f.path === path)
+    if (file === undefined || !isConflictedFile(file.status)) {
+      return undefined
+    }
+    return file.status
+  }
+
   private isFileResolvedExternally(file: WorkingDirectoryFileChange): boolean {
     if (!isConflictedFile(file.status)) {
       return false
@@ -288,21 +337,54 @@ export class CopilotConflictsDialog extends React.Component<
   private renderConflictedFile(file: WorkingDirectoryFileChange): JSX.Element {
     const resolution = this.getResolutionForPath(file.path)
     const choice = this.getResolutionForFile(file.path)
-    const { label: choiceLabel, icon: choiceIcon } = resolutionChoices[choice]
     const reasoning = resolution?.reasoning
+    const fileStatus = isConflictedFile(file.status) ? file.status : undefined
+    const isDeleteConflict =
+      fileStatus !== undefined && isDeleteConflictFile(fileStatus)
 
-    const reasoningText =
-      choice === 'copilot' && reasoning
-        ? reasoning
-        : choice === 'ours'
-        ? `Using changes from ${
-            this.props.conflictState.ourBranch ?? 'current branch'
-          }`
-        : choice === 'theirs'
-        ? `Using changes from ${
-            this.props.conflictState.theirBranch ?? 'incoming branch'
-          }`
+    // Use "Keep file" / "Delete file" labels for delete-vs-modify conflicts
+    let choiceLabel: string
+    let choiceIcon: typeof octicons.copilot
+    if (isDeleteConflict && isManualConflict(fileStatus)) {
+      choiceLabel = getDeleteConflictChoiceLabel(choice, fileStatus)
+      choiceIcon =
+        choice === 'copilot' ? octicons.copilot : resolutionChoices[choice].icon
+    } else {
+      const resolved = resolutionChoices[choice]
+      choiceLabel = resolved.label
+      choiceIcon = resolved.icon
+    }
+
+    let reasoningText: string | undefined
+    if (choice === 'copilot' && reasoning) {
+      reasoningText = reasoning
+    } else if (isDeleteConflict) {
+      const deletedSide = isManualConflict(fileStatus!)
+        ? getDeletedSide(fileStatus!)
         : undefined
+      const { ourBranch, theirBranch } = this.props.conflictState
+      if (deletedSide === 'ours') {
+        const branch = ourBranch ?? 'current branch'
+        reasoningText =
+          choice === 'ours'
+            ? `Deleting file (deleted on ${branch})`
+            : `Keeping modified file`
+      } else if (deletedSide === 'theirs') {
+        const branch = theirBranch ?? 'incoming branch'
+        reasoningText =
+          choice === 'theirs'
+            ? `Deleting file (deleted on ${branch})`
+            : `Keeping modified file`
+      }
+    } else if (choice === 'ours') {
+      reasoningText = `Using changes from ${
+        this.props.conflictState.ourBranch ?? 'current branch'
+      }`
+    } else if (choice === 'theirs') {
+      reasoningText = `Using changes from ${
+        this.props.conflictState.theirBranch ?? 'incoming branch'
+      }`
+    }
 
     const onDropdownClick = this.getResolutionDropdownClickHandler(file.path)
     const onOverflowClick = this.getOverflowMenuClickHandler(file.path)
