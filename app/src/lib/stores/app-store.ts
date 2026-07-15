@@ -6497,8 +6497,10 @@ export class AppStore extends TypedBaseStore<IAppState> {
         log.info('AppStore: Copilot conflict resolution aborted by user')
         return null
       }
+      // Propagate real failures so the caller can surface the underlying error
+      // instead of a generic "no results" message.
       log.warn('AppStore: Copilot conflict resolution failed', e)
-      return null
+      throw e
     } finally {
       totalTimer.done()
     }
