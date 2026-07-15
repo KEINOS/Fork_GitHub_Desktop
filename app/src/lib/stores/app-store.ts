@@ -6501,9 +6501,12 @@ export class AppStore extends TypedBaseStore<IAppState> {
       }
       // Propagate real failures (auth, network, rate limiting, timeouts, bad
       // model output) so the caller can surface the underlying error message
-      // instead of a single generic "no results" error.
-      log.warn('AppStore: Copilot conflict resolution failed', e)
-      throw e
+      // instead of a single generic "no results" error. Normalize to an
+      // `Error` so callers can rely on `Error` semantics even if a non-Error
+      // value was thrown.
+      const error = e instanceof Error ? e : new Error(String(e))
+      log.warn('AppStore: Copilot conflict resolution failed', error)
+      throw error
     } finally {
       totalTimer.done()
     }
@@ -6970,7 +6973,11 @@ export class AppStore extends TypedBaseStore<IAppState> {
         this.statsStore.increment('copilotConflictResolutionOver120sCount')
       }
     } catch (e) {
-      log.warn('AppStore: Copilot conflict resolution flow failed', e)
+      // Normalize to an `Error` so logging and `ErrorWithMetadata` (which
+      // expects an `Error`) produce a predictable message and stack even if a
+      // non-Error value was thrown.
+      const error = e instanceof Error ? e : new Error(String(e))
+      log.warn('AppStore: Copilot conflict resolution flow failed', error)
 
       // A stale run shouldn't surface errors or reset a newer run's state.
       if (!ownsCurrentRun()) {
@@ -6982,7 +6989,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
       // Surface the underlying error to the user so they understand why they
       // were routed back to manual conflict resolution. Mirrors the pattern
       // used by `_generateCommitMessage`.
-      this.emitError(new ErrorWithMetadata(e, { repository }))
+      this.emitError(new ErrorWithMetadata(error, { repository }))
 
       // Transition back to manual conflict resolution
       this.repositoryStateCache.updateMultiCommitOperationState(
