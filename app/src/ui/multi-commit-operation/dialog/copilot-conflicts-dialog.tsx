@@ -294,7 +294,14 @@ export class CopilotConflictsDialog extends React.Component<
       return true
     }
     const file = this.props.workingDirectory.files.find(f => f.path === path)
-    return file !== undefined && this.isFileResolvedExternally(file)
+    // Gone from the working directory, or no longer reported as conflicted,
+    // means the file was resolved/staged externally - there is nothing left to
+    // gate Continue on, so treat it as resolved.
+    if (file === undefined || !isConflictedFile(file.status)) {
+      return true
+    }
+    // Still conflicted: resolved only once the markers are removed in an editor.
+    return this.isFileResolvedExternally(file)
   }
 
   /**
@@ -365,13 +372,11 @@ export class CopilotConflictsDialog extends React.Component<
     return false
   }
 
-  private renderResolvedExternally(
-    file: WorkingDirectoryFileChange
-  ): JSX.Element {
+  private renderResolvedFileRow(path: string): JSX.Element {
     return (
-      <li key={file.path} className="copilot-conflicts-file-item">
+      <li key={path} className="copilot-conflicts-file-item">
         <div className="copilot-file-details">
-          <PathText path={file.path} />
+          <PathText path={path} />
           <span className="copilot-file-explanation resolved-text">
             No conflicts remaining
           </span>
@@ -381,6 +386,12 @@ export class CopilotConflictsDialog extends React.Component<
         </div>
       </li>
     )
+  }
+
+  private renderResolvedExternally(
+    file: WorkingDirectoryFileChange
+  ): JSX.Element {
+    return this.renderResolvedFileRow(file.path)
   }
 
   private renderConflictedFile(file: WorkingDirectoryFileChange): JSX.Element {
@@ -520,11 +531,16 @@ export class CopilotConflictsDialog extends React.Component<
       f => f.path === skipped.path
     )
 
-    // If the user resolved the file themselves (e.g. in an external editor,
-    // removing every marker), show the same "resolved" treatment the main
-    // conflicted list uses instead of the resolution dropdown.
-    if (file !== undefined && this.isFileResolvedExternally(file)) {
-      return this.renderResolvedExternally(file)
+    // If the user resolved the file themselves - by removing every marker in an
+    // editor, staging it, or otherwise making it no longer conflicted - show the
+    // same "resolved" treatment the main conflicted list uses instead of the
+    // resolution dropdown.
+    if (
+      file === undefined ||
+      !isConflictedFile(file.status) ||
+      this.isFileResolvedExternally(file)
+    ) {
+      return this.renderResolvedFileRow(skipped.path)
     }
 
     const { ourBranch, theirBranch } = this.props.conflictState
