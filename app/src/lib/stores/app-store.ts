@@ -404,6 +404,7 @@ import {
   IConflictResolutionProgress,
   ICopilotResolutionSummary,
   IFileResolution,
+  ICopilotSkippedFile,
 } from '../copilot-conflict-resolution'
 import {
   buildConflictContext,
@@ -6399,6 +6400,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
   ): Promise<{
     readonly resolutions: ReadonlyArray<IFileResolution>
     readonly summary: ICopilotResolutionSummary
+    readonly skippedFiles: ReadonlyArray<ICopilotSkippedFile>
   } | null> {
     if (!enableCopilotConflictResolution()) {
       return null
@@ -6483,6 +6485,15 @@ export class AppStore extends TypedBaseStore<IAppState> {
         const references =
           cited.length > 0 ? cited : fallbackReferencedContext(context)
 
+        // Files Copilot declined to resolve (too large, unreadable, no
+        // parseable markers, etc.) so the result dialog can surface them for
+        // manual resolution.
+        const skippedFiles = context.files.flatMap(f =>
+          f.skippedReason !== undefined
+            ? [{ path: f.path, reason: f.skippedReason }]
+            : []
+        )
+
         return {
           resolutions: result.resolutions,
           summary: {
@@ -6491,6 +6502,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
             theirLabel: labels.theirLabel,
             references,
           },
+          skippedFiles,
         }
       } finally {
         resolveTimer.done()
@@ -6928,6 +6940,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
             },
             copilotResolutions: result.resolutions,
             copilotResolutionSummary: result.summary,
+            copilotSkippedFiles: result.skippedFiles,
             copilotResolutionProgress: null,
             copilotResolutionAbortController: null,
           })
@@ -6949,6 +6962,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
           },
           copilotResolutions: result.resolutions,
           copilotResolutionSummary: result.summary,
+          copilotSkippedFiles: result.skippedFiles,
           copilotResolutionProgress: null,
           copilotResolutionAbortController: null,
         })
@@ -6996,6 +7010,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
           useCopilotConflictResolution: false,
           copilotResolutions: null,
           copilotResolutionSummary: null,
+          copilotSkippedFiles: null,
           copilotResolutionProgress: null,
           copilotResolutionAbortController: null,
         })
@@ -9587,6 +9602,7 @@ export class AppStore extends TypedBaseStore<IAppState> {
       useCopilotConflictResolution: false,
       copilotResolutions: null,
       copilotResolutionSummary: null,
+      copilotSkippedFiles: null,
       copilotResolutionProgress: null,
       copilotResolutionAbortController: null,
       copilotResolutionModel: null,
